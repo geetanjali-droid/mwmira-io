@@ -1051,7 +1051,7 @@
     if (!rows.length) html += '<tr><td colspan="10" class="muted">No users yet. Click "Add User" to give someone access.</td></tr>';
     rows.forEach(function (r) {
       const p = r.Perms || {};
-      html += '<tr><td>' + esc(r['Email']) + (r.IsOwner ? ' <span class="badge status-in" title="Script owner — always full access">Owner</span>' : '') + (r.HasPasscode ? '' : ' <span class="badge status-low" title="No passcode set — this user cannot sign in yet">no passcode</span>') + '</td><td>' + esc(r['Name'] || '-') + '</td>' +
+      html += '<tr><td>' + esc(r['Email']) + (r.IsOwner ? ' <span class="badge status-in" title="Workspace owner — always full access">Owner</span>' : '') + (r.HasPasscode ? '' : ' <span class="badge status-low" title="No passcode set — this user cannot sign in yet">no passcode</span>') + '</td><td>' + esc(r['Name'] || '-') + '</td>' +
         PERM_COLS.map(function (c) {
           return '<td class="perm-td"><input type="checkbox" class="perm-chk"' + (p[c.key] ? ' checked' : '') + (r.IsOwner ? ' disabled' : '') + ' onchange="toggleUserPerm(\'' + jsArg(r['Email']) + '\', \'' + c.key + '\', this)" title="' + c.label + '"></td>';
         }).join('') +
@@ -1116,7 +1116,7 @@
     const emailAddr = document.getElementById('user-email').value.trim();
     const name = document.getElementById('user-name').value.trim();
     const perms = getUserPermChecks();
-    const passcode = document.getElementById('user-passcode').value.trim();
+    const passcode = document.getElementById('user-passcode').value;
     const whatsapp = document.getElementById('user-whatsapp').value.trim();
     if (!emailAddr || emailAddr.indexOf('@') === -1) return alert('Enter a valid email address');
     busy(true);
