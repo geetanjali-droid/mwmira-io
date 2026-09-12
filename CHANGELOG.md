@@ -1,5 +1,12 @@
 # Changes
 
+## Non-blocking workspace preview
+
+- Replace the schema-blocked welcome button with Open dashboard.
+- Make all workspace sections accessible with clearly labeled empty states, including while Firebase is offline.
+- Keep real authentication separate from public preview access; preserve all inventory read/write guards.
+- Add desktop/mobile tests for preview entry, navigation, refresh, theme and reconnecting without database access.
+
 ## Firebase connection-only integration
 
 - Target the user-provided mw-mira-io Realtime Database URL.

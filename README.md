@@ -28,7 +28,7 @@ Open http://127.0.0.1:5500. No build is needed. Firebase, Chart.js, and fonts re
 
 The app now targets **https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app/** in connection-only mode. The previous project's API key and app identifiers have been removed. The URL is sufficient for this Realtime Database connection; no Authentication or Storage integration is configured.
 
-The user owns the schema. The application subscribes only to Firebase connection metadata at `.info/connected`. Login and inventory operations are paused. Both legacy adapter read and write entry points fail closed, so this project is not read through the old `/data` layout and is never seeded or migrated. The legacy adapter remains only for isolated regression tests until the user's actual schema is supplied and mapped. Do not turn off connection-only mode to use that adapter against this database.
+The user owns the schema. The application subscribes only to Firebase connection metadata at `.info/connected`. The welcome screen offers Open dashboard without requiring a login or a completed schema. This opens a public workspace preview with empty states in every section; it does not authenticate anyone or grant data access. Inventory operations remain paused. Both legacy adapter read and write entry points fail closed, so this project is not read through the old `/data` layout and is never seeded or migrated. The legacy adapter remains only for isolated regression tests until the user's actual schema is supplied and mapped. Do not turn off connection-only mode to use that adapter against this database.
 
 No database rules are deployed: the database deployment block has been removed from `firebase.json`. The local legacy rules file is reference material, not a statement of this project's live rules. No live rules or data were inspected or changed.
 
@@ -53,7 +53,7 @@ pnpm install --frozen-lockfile
 pnpm test:ui
 ```
 
-Or install the dependencies with npm. Set `BROWSER_CHANNEL=chrome` to use installed Chrome. Browser checks intercept Firebase scripts and use an isolated in-memory database; they never access live inventory. They verify desktop/mobile login, dashboard rendering, navigation, dialogs, dark mode and page overflow. Screenshots are written to ignored `test-results/`.
+Or install the dependencies with npm. Set `BROWSER_CHANNEL=chrome` to use installed Chrome. Browser checks intercept Firebase scripts and use an isolated in-memory database; they never access live inventory. The legacy UI checks verify desktop/mobile login, dashboard rendering, navigation, dialogs, dark mode and page overflow. Run `pnpm test:preview` for the current connection-only experience: offline entry, every section, refresh, theme switching, reconnecting and no inventory access. Screenshots are written to ignored `test-results/`.
 
 Regression coverage includes login failures, retry after network errors, read-only requests, concurrent receipts, rejected writes, cross-session conflicts, quantity validation, entry ID rollover, handler name collisions, packing, FEFO dispatch, shortages and reversal. Firebase server rules and network transaction semantics still require integration testing against a dedicated Firebase emulator/project before production deployment.
 

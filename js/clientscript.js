@@ -19,6 +19,7 @@
   });
 
   function submitLogin() {
+    if (isConnectionOnly()) { openWorkspacePreview(); return; }
     const email = document.getElementById('login-email').value.trim();
     const passcode = document.getElementById('login-passcode').value.trim();
     const errorEl = document.getElementById('login-error');
@@ -45,6 +46,37 @@
       .checkLoginPasscode(email, passcode);
   }
 
+  function isConnectionOnly() {
+    return typeof FIREBASE_CONNECTION_ONLY !== 'undefined' && FIREBASE_CONNECTION_ONLY;
+  }
+
+  // Public, empty workspace shell; never treats entered credentials as authentication.
+  function openWorkspacePreview() {
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('app-wrapper').style.display = 'block';
+    document.querySelector('.p-name').textContent = 'Workspace preview';
+    document.querySelector('.user-info').textContent = 'Preview · No inventory data loaded';
+    document.querySelectorAll('.p-avatar, .gh-avatar').forEach(function (el) { el.textContent = 'P'; });
+    document.querySelector('.p-status').textContent = 'Preview';
+    document.querySelector('[onclick="location.reload()"]').textContent = 'Back';
+    document.getElementById('chat-fab').hidden = true;
+    document.querySelectorAll('.page').forEach(function (page) {
+      const content = page.querySelector('.content-pad');
+      if (!content) return;
+      const title = page.querySelector('.page-title')?.textContent || 'Inventory';
+      const dashboard = page.id === 'page-dash';
+      content.innerHTML = (dashboard ? '<div class="kpi-row">' + ['Raw materials', 'Packaging', 'Finished goods', 'Dispatches'].map(function (label) {
+        return '<div class="kpi-card"><div class="kpi-label">' + label + '</div><div class="kpi-value">—</div><div class="muted">Data not linked yet</div></div>';
+      }).join('') + '</div>' : '') + '<div class="workspace-empty"><h2>' + (dashboard ? 'Your dashboard is ready' : esc(title)) + '</h2><p>You can explore every section. Your inventory will appear here once your data is linked.</p><p class="muted">No records have been loaded or created.</p></div>';
+      page.querySelectorAll('.topbar button').forEach(function (button) {
+        button.disabled = button.getAttribute('onclick') !== 'loadDashboard()';
+        if (button.disabled) button.title = 'Available once inventory data is linked';
+      });
+    });
+    switchPage('dash');
+    const period = document.getElementById('dash-period'); if (period) period.textContent = 'Workspace overview';
+  }
+
   /* ============ THEME (light / dark) ============ */
   function applyTheme(theme) {
     document.body.classList.toggle('dark', theme === 'dark');
@@ -69,6 +101,13 @@
 
   function switchPage(page) {
     const target = document.getElementById('page-' + page);
+    if (isConnectionOnly()) {
+      if (!target) return;
+      document.querySelectorAll('.page').forEach(function (el) { el.style.display = el === target ? 'block' : 'none'; });
+      document.querySelectorAll('.nav-item').forEach(function (el) { el.classList.toggle('active', el.dataset.page === page); });
+      if (window.matchMedia('(max-width: 760px)').matches && !document.getElementById('sidebar').classList.contains('collapsed')) toggleSidebar();
+      return;
+    }
     if (!target || (page === 'admin' && !DASHBOARD_DATA?.isAdmin) || (page === 'users' && !DASHBOARD_DATA?.isSuper)) return;
     document.querySelectorAll('.page').forEach(function (p) { p.style.display = 'none'; });
     document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
@@ -140,6 +179,7 @@
   /* ============ LOAD ============ */
 
   function loadDashboard() {
+    if (isConnectionOnly()) { openWorkspacePreview(); return; }
     google.script.run.withSuccessHandler(applyDashboard).withFailureHandler(showError).getDashboardData();
   }
 
