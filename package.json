@@ -1,0 +1,1 @@
+{"name":"meethi-golee-inventory","version":"1.0.0","private":true,"scripts":{"test":"node --test tests/*.test.cjs","test:ui":"node tests/ui.cjs","start":"node scripts/serve.cjs"},"devDependencies":{"@playwright/test":"1.55.1"}}
