@@ -9,6 +9,8 @@ function setup() {
   const copy = value => JSON.parse(JSON.stringify(value));
   const context = vm.createContext({ console: { log() {}, error() {} }, structuredClone, setTimeout });
   context.window = context;
+  // Legacy adapter tests use only the isolated fake database, never the connected project.
+  context.FIREBASE_CONNECTION_ONLY = false;
   context.DB = { ref() { return {
     async once() { if (failRead) { failRead = false; throw Error('offline'); } return { val: () => copy(stored) }; },
     async transaction(update) { if (failWrite) { failWrite = false; throw Error('write denied'); } const next = update(copy(stored)); if (next === undefined) return { committed: false }; stored = copy(next); writes++; return { committed: true }; }

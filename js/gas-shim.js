@@ -183,6 +183,7 @@ function _canonical(value) {
 function _sameStored(a, b) { return JSON.stringify(_canonical(a)) === JSON.stringify(_canonical(b)); }
 
 async function loadMEM() {
+  requireInventorySchema_();
   _PROPS.SHEET_ID = "mem";
   const stored = (await DB.ref("data").once("value")).val();
   _storedBaseline = stored;
@@ -202,6 +203,7 @@ async function loadMEM() {
 }
 
 async function flushMEM() {
+  requireInventorySchema_();
   const next = {};
   Object.keys(MEM.sheets).forEach(function (n) { next[n] = _toStored(MEM.sheets[n].rows); });
   // Firebase omits empty arrays; normalize to its wire representation before comparing.
@@ -214,4 +216,11 @@ async function flushMEM() {
   }, undefined, false);
   if (!result.committed) throw new Error("Inventory changed in another session. Refresh and try again; your changes were not saved.");
   _storedBaseline = next;
+}
+
+function requireInventorySchema_() {
+  // Fail closed even if connection configuration failed to load.
+  if (typeof FIREBASE_CONNECTION_ONLY === 'undefined' || FIREBASE_CONNECTION_ONLY) {
+    throw new Error('Firebase is connected in connection-only mode. Inventory access is paused until your schema is integrated. No data has been created or changed.');
+  }
 }

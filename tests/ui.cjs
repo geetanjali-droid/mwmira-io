@@ -2,7 +2,7 @@ const { chromium } = require('@playwright/test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const mock = `let stored = null; const DB = { ref() { return {
+const mock = `const FIREBASE_CONNECTION_ONLY = false; let stored = null; const DB = { ref() { return {
   async once() { return { val: () => structuredClone(stored) }; },
   async transaction(fn) { const next = fn(structuredClone(stored)); if (next === undefined) return { committed: false }; stored = structuredClone(next); return { committed: true }; }
 }; } };`;

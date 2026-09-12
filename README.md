@@ -24,19 +24,19 @@ Open http://127.0.0.1:5500. No build is needed. Firebase, Chart.js, and fonts re
 - `_original/`: original Apps Script sources for reference; excluded from hosting.
 - `tests/`: isolated database regression tests and browser checks.
 
-## Firebase setup and storage
+## Firebase connection
 
-Set the web configuration in `js/firebase-init.js`, the project in `.firebaserc`, and the initial owner email in `js/gas-shim.js`. With an empty database, the first successful owner login creates the base inventory tables and sets that owner's passcode. Existing accounts must be added through User Access.
+The app now targets **https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app/** in connection-only mode. The previous project's API key and app identifiers have been removed. The URL is sufficient for this Realtime Database connection; no Authentication or Storage integration is configured.
 
-Data lives at `/data/<SheetName>`, with a `headers` array and a `rows` array of objects keyed by those headers. Dates are ISO strings. Empty row arrays may be omitted by Firebase. This version reads `/data` directly; the old `/data_index` is no longer required or maintained. Existing structured `/data` tables remain compatible. The obsolete `/mem` format is not migrated automatically.
+The user owns the schema. The application subscribes only to Firebase connection metadata at `.info/connected`. Login and inventory operations are paused. Both legacy adapter read and write entry points fail closed, so this project is not read through the old `/data` layout and is never seeded or migrated. The legacy adapter remains only for isolated regression tests until the user's actual schema is supplied and mapped. Do not turn off connection-only mode to use that adapter against this database.
 
-Each queued request reads a fresh snapshot. Reads that do not change data perform no write. Mutations commit together using a compare-and-set transaction over `/data`. If another session changes that snapshot, the write is rejected with a refresh-and-retry message. Failed requests discard their local changes. Do not run older whole-database-writing clients alongside this version: those clients can still overwrite newer data. Large inventories will eventually need a record-oriented server data layer rather than full-table snapshots.
+No database rules are deployed: the database deployment block has been removed from `firebase.json`. The local legacy rules file is reference material, not a statement of this project's live rules. No live rules or data were inspected or changed.
 
 ## Authentication limitation
 
-**The supplied database rules permit public reads and writes. This app is not production-secure.** Passcodes and authorization checks currently run in the browser, and account passcodes are stored in database rows. Hiding the URL or signing in anonymously does not protect inventory or enforce roles.
+**The legacy local database rules permit public reads and writes and are no longer configured for deployment. The new project's live rules have not been inspected.** Passcodes and authorization checks currently run in the browser, and account passcodes are stored in database rows. Hiding the URL or signing in anonymously does not protect inventory or enforce roles.
 
-Before public deployment, migrate accounts to Firebase Authentication and enforce roles and stock mutations in trusted server code and database rules. Do not simply turn on authenticated-only rules with the existing browser passcode flow; that flow does not establish a Firebase Auth session. This update preserves the existing connection and rules and does not deploy or change live Firebase data.
+Before public deployment, migrate accounts to Firebase Authentication and enforce roles and stock mutations in trusted server code and database rules. Do not simply turn on authenticated-only rules with the existing browser passcode flow; that flow does not establish a Firebase Auth session. Connection-only mode does not deploy rules or change live Firebase data.
 
 ## Verification
 

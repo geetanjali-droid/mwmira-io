@@ -1,5 +1,13 @@
 # Changes
 
+## Firebase connection-only integration
+
+- Target the user-provided mw-mira-io Realtime Database URL.
+- Remove the old project credentials and disable database-rules deployment.
+- Subscribe only to connection metadata; pause inventory and login pending the user-owned schema.
+- Block legacy schema reads, seeding and writes in the connected app.
+- Add tests proving connection-only mode cannot access inventory paths.
+
 ## B23
 
 - Queue requests and reload inventory before each operation; skip unchanged writes.
