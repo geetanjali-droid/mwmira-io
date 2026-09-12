@@ -13,7 +13,8 @@
       "test-results/**",
       "package.json",
       "*lock*",
-      "CHANGELOG.md"
+      "CHANGELOG.md",
+      "docs/**"
     ]
   }
 }

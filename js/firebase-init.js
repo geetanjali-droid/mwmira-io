@@ -1,4 +1,4 @@
-/* Connection only: the database schema is owned and supplied by the user.
+/* Read-only integration: the database schema is owned and supplied by the user.
    Do not enable the legacy adapter against this project or seed any tables. */
 const FIREBASE_CONNECTION_ONLY = true;
 const firebaseConfig = {
@@ -20,11 +20,11 @@ function renderFirebaseConnection() {
   });
   document.querySelectorAll('.login-field-label, .login-footnote').forEach(function (el) { el.hidden = true; });
   const subtitle = document.querySelector('.login-sub');
-  if (subtitle) subtitle.textContent = 'Explore your workspace. Live inventory will appear once your data is linked.';
+  if (subtitle) subtitle.textContent = 'Explore your workspace. View live inventory and channel data from Firebase.';
   const button = document.querySelector('.btn-login-gold');
   if (button) { button.disabled = false; button.textContent = 'Open dashboard'; }
 }
-// Connection metadata only: no application data reads, writes or schema assumptions.
+// Connection metadata. live-data.js separately subscribes to catalog-defined record paths.
 DB.ref('.info/connected').on('value', function (snapshot) {
   firebaseConnected = snapshot.val() === true;
   renderFirebaseConnection();

@@ -1,66 +1,59 @@
-# Meethi Golee Inventory
+# Meethi Golee / Mira live dashboard
 
-A static HTML/CSS/JavaScript inventory app ported from Google Apps Script, with a Firebase Realtime Database storage adapter. It tracks raw materials, packaging, packing runs, batches, dispatches, returns, costing, and user permissions.
+A static HTML/CSS/JavaScript dashboard connected read-only to:
 
-## Run locally
+https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app/
 
-Install Node.js 20 or newer, then run:
+## Run
 
 ```sh
 node scripts/serve.cjs
 ```
 
-Open http://127.0.0.1:5500. No build is needed. Firebase, Chart.js, and fonts require an internet connection. The checked-in Firebase config points to the existing project; use a separate project for development. Do not enter test stock against the live project.
+Open http://127.0.0.1:5500 and choose **Open dashboard**. No build is required. Internet access is required for Firebase and the hosted frontend dependencies.
+
+## Current Firebase integration
+
+The dashboard reads the user's catalog at `/mira/schema/v1`, then subscribes to the collection paths declared in `path_template`. It supports keyed collections, nested month/account collections, composite keys and singleton state. Catalog updates reconcile the subscriptions automatically. It never reads the database root or the old `/data` spreadsheet layout.
+
+At verification, Firebase contained the catalog but no business records. There are 43 catalog definitions, represented by 37 dashboard collections: the shared orders/returns paths are deduplicated, and four raw archives are excluded. Raw archives and `_raw` payloads are not dashboard records. A snapshot of the fetched catalog is retained at `docs/firebase-schema-v1.json` for regression tests; the application uses the live catalog, not this snapshot.
+
+- Inventory KPIs use the declared current stock, packed, batch balance and supervisor quantity fields.
+- Incoming orders and returns are shown independently from recorded dispatch and inventory movements. The app does not match listing names to inventory products or import orders into stock.
+- Amazon, Flipkart, Cashfree and Meta monthly summaries remain separate. Financial totals require `reference_verified` and `coverage_complete` to both be true. Missing or invalid values display as unavailable, not zero. Integer paise are formatted as rupees for display.
+- The inventory, supervisor, admin and user-profile sections have schema-driven, searchable tables with 50-row pagination. Only declared fields are displayed; password/secret fields and raw payloads are excluded.
+- Firebase `value` listeners update the active view on additions, changes and deletions; no manual refresh or polling is needed. UI updates are coalesced over 30 ms. Listeners are deduplicated, reconciled after catalog changes, and detached on page exit.
+- Connection state, last-received time, source loading and read failures are shown explicitly. Offline data is labeled stale. Refresh reconnects listeners and retries failed reads. Missing schema does not block opening the workspace.
+
+This integration performs **no writes, schema creation, seeding, migration or database-rule deployment**. `FIREBASE_CONNECTION_ONLY` stays true to block both entry points of the old mutable spreadsheet adapter; its name is retained for compatibility. Only the separate read-only adapter accesses the new collection paths.
+
+## Authentication
+
+Open dashboard provides read-only UI access under the database's existing read rules. It is not a verified login and does not enforce user roles. Firebase Authentication has not been configured; adding a user profile does not establish authentication. The supplied legacy passcode workflow remains disabled against this project. The local `database.rules.json` is historical reference and is not configured for deployment. No live rules were changed.
 
 ## Files
 
-- `index.html`: login, dashboard, inventory screens and dialogs.
-- `css/styles.css`: green/gold theme, dark theme and responsive layout.
-- `js/firebase-init.js`: Firebase web project configuration.
-- `js/gas-shim.js`: Apps Script compatibility, spreadsheet serialization and database transactions.
-- `js/backend.js`: inventory calculations, validation and permission logic.
-- `js/gsrun-shim.js`: queued UI-to-backend calls, session gate and error recovery.
-- `js/clientscript.js`: rendering, forms and interactions.
-- `_original/`: original Apps Script sources for reference; excluded from hosting.
-- `tests/`: isolated database regression tests and browser checks.
+- `js/live-data.js`: schema interpretation, data normalization and subscription lifecycle.
+- `js/live-dashboard.js`: live KPIs, provider summaries and record tables.
+- `js/firebase-init.js`: project connection and welcome-screen metadata.
+- `js/clientscript.js`, `index.html`, `css/styles.css`: shared UI and legacy views.
+- `js/backend.js`, `js/gas-shim.js`, `js/gsrun-shim.js`: legacy inventory logic retained for isolated tests; mutations are blocked in the connected app.
+- `_original/`: original Apps Script sources.
 
-## Firebase connection
-
-The app now targets **https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app/** in connection-only mode. The previous project's API key and app identifiers have been removed. The URL is sufficient for this Realtime Database connection; no Authentication or Storage integration is configured.
-
-The user owns the schema. The application subscribes only to Firebase connection metadata at `.info/connected`. The welcome screen offers Open dashboard without requiring a login or a completed schema. This opens a public workspace preview with empty states in every section; it does not authenticate anyone or grant data access. Inventory operations remain paused. Both legacy adapter read and write entry points fail closed, so this project is not read through the old `/data` layout and is never seeded or migrated. The legacy adapter remains only for isolated regression tests until the user's actual schema is supplied and mapped. Do not turn off connection-only mode to use that adapter against this database.
-
-No database rules are deployed: the database deployment block has been removed from `firebase.json`. The local legacy rules file is reference material, not a statement of this project's live rules. No live rules or data were inspected or changed.
-
-## Authentication limitation
-
-**The legacy local database rules permit public reads and writes and are no longer configured for deployment. The new project's live rules have not been inspected.** Passcodes and authorization checks currently run in the browser, and account passcodes are stored in database rows. Hiding the URL or signing in anonymously does not protect inventory or enforce roles.
-
-Before public deployment, migrate accounts to Firebase Authentication and enforce roles and stock mutations in trusted server code and database rules. Do not simply turn on authenticated-only rules with the existing browser passcode flow; that flow does not establish a Firebase Auth session. Connection-only mode does not deploy rules or change live Firebase data.
-
-## Verification
-
-Dependency-free inventory tests:
+## Tests
 
 ```sh
 node --test tests/*.test.cjs
-```
-
-Browser checks (Microsoft Edge installed):
-
-```sh
 pnpm install --frozen-lockfile
-pnpm test:ui
+pnpm test:live
 ```
 
-Or install the dependencies with npm. Set `BROWSER_CHANNEL=chrome` to use installed Chrome. Browser checks intercept Firebase scripts and use an isolated in-memory database; they never access live inventory. The legacy UI checks verify desktop/mobile login, dashboard rendering, navigation, dialogs, dark mode and page overflow. Run `pnpm test:preview` for the current connection-only experience: offline entry, every section, refresh, theme switching, reconnecting and no inventory access. Screenshots are written to ignored `test-results/`.
+The current browser tests default to installed Chrome. Set `BROWSER_CHANNEL=msedge` for Edge. `pnpm test:preview` is an alias for the same live dashboard checks; `pnpm test:ui` exercises legacy UI workflows with a simulated database (defaults to Edge).
 
-Regression coverage includes login failures, retry after network errors, read-only requests, concurrent receipts, rejected writes, cross-session conflicts, quantity validation, entry ID rollover, handler name collisions, packing, FEFO dispatch, shortages and reversal. Firebase server rules and network transaction semantics still require integration testing against a dedicated Firebase emulator/project before production deployment.
+Browser tests intercept Firebase and simulate updates without writing live records. They cover desktop/mobile entry, navigation, empty data, adds/edits/deletes, shared-channel deduplication, paise display, denied reads, offline/reconnect, refresh and no database writes. Unit tests cover schema paths, nested/composite keys, malformed/missing values and subscription cleanup. The legacy inventory regression tests also remain available. Ignored screenshots are saved in `test-results/`.
 
-## Hosting
+## Hosting and limits
 
-After configuring secure authentication and rules, Firebase CLI can deploy the static site with `firebase deploy --only hosting`. Hosting excludes archived source, tests, development scripts and dependency metadata. Pushing this repository does not itself deploy Firebase Hosting.
+Pushing GitHub does not deploy Firebase Hosting. `firebase deploy --only hosting` publishes the static files using `.firebaserc`; tests, schema snapshots, archived sources and development files are excluded. Database rules are not deployed by this configuration.
 
-## Port limitations
-
-Apps Script email, WhatsApp, scheduled agent sync and external AI calls require a server integration; their original browser shims cannot provide those services. Local inventory and analytics calculations run in the browser. Browser permission controls improve the UI but are not a security boundary.
+Each subscribed collection prefix is read as a snapshot. Tables paginate rendering, not database reads; very large archives require indexed server queries or aggregation rather than downloading full snapshots. New catalog versions under a different version path require an explicit version migration. Apps Script email, WhatsApp, AI calls and scheduled imports still require server integrations.

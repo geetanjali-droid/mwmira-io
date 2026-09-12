@@ -1,0 +1,3849 @@
+{
+  "collection_count": 43,
+  "collections": {
+    "amazon_ads": {
+      "fields": {
+        "campaign_id": {
+          "required": false,
+          "type": "string"
+        },
+        "campaign_name": {
+          "required": true,
+          "type": "string"
+        },
+        "sales_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "source_ref": {
+          "required": false,
+          "type": "string"
+        },
+        "spend_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        }
+      },
+      "headers": [
+        "campaign_name",
+        "campaign_id",
+        "source_ref",
+        "spend_paise",
+        "sales_paise"
+      ],
+      "implementation": "planned_requires_source_mapping",
+      "key_rule": "Hash stable campaign identity; never use campaign name as key",
+      "notes": "Separate Amazon advertising export; parser not implemented.",
+      "path_template": "amazon/ads/{month}/{campaign_key}",
+      "provider": "amazon"
+    },
+    "amazon_orders": {
+      "fields": {
+        "asin": {
+          "required": true,
+          "source_header": "asin",
+          "type": "string"
+        },
+        "batch_id": {
+          "required": false,
+          "type": "string"
+        },
+        "channel": {
+          "required": true,
+          "type": "string"
+        },
+        "entry_id": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "entry_type": {
+          "enum": [
+            "OUT"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "fetched_at": {
+          "required": true,
+          "type": "string"
+        },
+        "fulfilment": {
+          "required": true,
+          "source_header": "fulfillment-channel",
+          "type": "string"
+        },
+        "item_status": {
+          "required": true,
+          "source_header": "item-status",
+          "type": "string"
+        },
+        "message": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "order_date": {
+          "required": true,
+          "source_header": "purchase-date",
+          "type": "string"
+        },
+        "order_id": {
+          "required": true,
+          "source_header": "amazon-order-id",
+          "type": "string"
+        },
+        "order_item_id": {
+          "required": true,
+          "source_header": "order-item-id",
+          "type": "string"
+        },
+        "order_status": {
+          "required": true,
+          "source_header": "order-status",
+          "type": "string"
+        },
+        "out_date": {
+          "required": true,
+          "source_header": "last-updated-date",
+          "type": "string"
+        },
+        "processed_at": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "product_ref": {
+          "required": true,
+          "source_header": "product-name",
+          "type": "string"
+        },
+        "quantity": {
+          "minimum": 1,
+          "required": true,
+          "type": "integer"
+        },
+        "sale_value": {
+          "required": true,
+          "source_header": "item-price",
+          "type": "string"
+        },
+        "sale_value_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        },
+        "sku": {
+          "required": true,
+          "source_header": "sku",
+          "type": "string"
+        },
+        "source_hash": {
+          "required": false,
+          "type": "string"
+        },
+        "source_ref": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "pending_review",
+            "processed",
+            "needs_review"
+          ],
+          "owner": "Mira initializes; MG_IMS owns subsequent changes",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "order_id",
+        "order_item_id",
+        "order_date",
+        "out_date",
+        "order_status",
+        "item_status",
+        "fulfilment",
+        "sku",
+        "asin",
+        "product_ref",
+        "quantity",
+        "sale_value",
+        "source_ref",
+        "fetched_at",
+        "schema_version",
+        "source_hash",
+        "batch_id",
+        "entry_id",
+        "message",
+        "processed_at",
+        "channel",
+        "entry_type",
+        "status",
+        "sale_value_paise"
+      ],
+      "implementation": "inventory_publish_supported",
+      "key_rule": "amazon__{order_item_id}__OUT",
+      "notes": "Identifiers remain strings. product_ref is a portal listing, not an IMS product master name. Money text is source text; *_paise is canonical. Preserve processed records and all downstream fields. IMS consumption remains paused in MG_IMS.",
+      "path_template": "orders/{record_id}",
+      "provider": "amazon"
+    },
+    "amazon_raw_orders": {
+      "fields": {
+        "fields": {
+          "item_contract": "Items: name:string, value:string; sanitized source columns",
+          "required": true,
+          "type": "array"
+        }
+      },
+      "headers": [
+        "fields"
+      ],
+      "implementation": "inventory_publish_supported",
+      "key_rule": "SHA256 of UTF-8 report content, then row index",
+      "notes": "Column names are values in name/value pairs; forbidden key characters are safe.",
+      "path_template": "raw_orders/amazon/{source_hash}/{row_index}",
+      "provider": "amazon"
+    },
+    "amazon_requests": {
+      "fields": {
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "downloaded_at": {
+          "required": false,
+          "type": "string"
+        },
+        "file_name": {
+          "required": false,
+          "type": "string"
+        },
+        "last_polled_at": {
+          "required": false,
+          "type": "string"
+        },
+        "next_poll_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider_report_id": {
+          "required": false,
+          "type": "string"
+        },
+        "ready_at": {
+          "required": false,
+          "type": "string"
+        },
+        "report_type": {
+          "required": true,
+          "type": "string"
+        },
+        "request_id": {
+          "required": true,
+          "type": "string"
+        },
+        "requested_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "request_id",
+        "report_type",
+        "window_from",
+        "window_to",
+        "requested_at",
+        "status",
+        "provider_report_id",
+        "file_name",
+        "ready_at",
+        "downloaded_at",
+        "last_polled_at",
+        "next_poll_at",
+        "attempts"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "Amazon singleton request; other providers use request UUID",
+      "notes": "Asynchronous report request contract; portal collection remains inactive.",
+      "path_template": "amazon/state/txnRequest",
+      "provider": "amazon"
+    },
+    "amazon_returns": {
+      "fields": {
+        "asin": {
+          "required": true,
+          "source_header": "asin",
+          "type": "string"
+        },
+        "batch_id": {
+          "required": false,
+          "type": "string"
+        },
+        "channel": {
+          "required": true,
+          "type": "string"
+        },
+        "entry_id": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "entry_type": {
+          "enum": [
+            "RTO"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "fetched_at": {
+          "required": true,
+          "type": "string"
+        },
+        "fulfilment": {
+          "required": true,
+          "source_header": "fulfillment-channel",
+          "type": "string"
+        },
+        "item_status": {
+          "required": true,
+          "source_header": "item-status",
+          "type": "string"
+        },
+        "message": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "order_date": {
+          "required": true,
+          "source_header": "purchase-date",
+          "type": "string"
+        },
+        "order_id": {
+          "required": true,
+          "source_header": "amazon-order-id",
+          "type": "string"
+        },
+        "order_item_id": {
+          "required": true,
+          "source_header": "order-item-id",
+          "type": "string"
+        },
+        "order_status": {
+          "required": true,
+          "source_header": "order-status",
+          "type": "string"
+        },
+        "out_date": {
+          "required": true,
+          "source_header": "last-updated-date",
+          "type": "string"
+        },
+        "processed_at": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "product_ref": {
+          "required": true,
+          "source_header": "product-name",
+          "type": "string"
+        },
+        "quantity": {
+          "minimum": 1,
+          "required": true,
+          "type": "integer"
+        },
+        "sale_value": {
+          "required": true,
+          "source_header": "item-price",
+          "type": "string"
+        },
+        "sale_value_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        },
+        "sku": {
+          "required": true,
+          "source_header": "sku",
+          "type": "string"
+        },
+        "source_hash": {
+          "required": false,
+          "type": "string"
+        },
+        "source_ref": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "pending_review",
+            "processed",
+            "needs_review"
+          ],
+          "owner": "Mira initializes; MG_IMS owns subsequent changes",
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "order_id",
+        "order_item_id",
+        "order_date",
+        "out_date",
+        "order_status",
+        "item_status",
+        "fulfilment",
+        "sku",
+        "asin",
+        "product_ref",
+        "quantity",
+        "sale_value",
+        "source_ref",
+        "fetched_at",
+        "schema_version",
+        "source_hash",
+        "batch_id",
+        "entry_id",
+        "message",
+        "processed_at",
+        "channel",
+        "entry_type",
+        "status",
+        "sale_value_paise"
+      ],
+      "implementation": "inventory_publish_supported",
+      "key_rule": "amazon__{order_item_id}__RTO",
+      "notes": "Identifiers remain strings. product_ref is a portal listing, not an IMS product master name. Money text is source text; *_paise is canonical. Preserve processed records and all downstream fields. IMS consumption remains paused in MG_IMS.",
+      "path_template": "returns/{record_id}",
+      "provider": "amazon"
+    },
+    "amazon_rollup": {
+      "fields": {
+        "actual_bank_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "computed_at": {
+          "required": true,
+          "type": "string"
+        },
+        "coverage_complete": {
+          "required": true,
+          "type": "boolean"
+        },
+        "discount_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "expected_bank_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "fees_deductions_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "gap_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "gross_sale_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "month": {
+          "required": true,
+          "type": "string"
+        },
+        "order_count": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "other_adjustments_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "pending_in_transit_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "realisation_bps": {
+          "required": false,
+          "type": "integer",
+          "unit": "basis points; 10000 = 100%"
+        },
+        "reference_verified": {
+          "required": true,
+          "type": "boolean"
+        },
+        "returns_cancellations_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "row_count": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "source_hashes": {
+          "required": true,
+          "type": "array"
+        }
+      },
+      "headers": [
+        "month",
+        "provider",
+        "computed_at",
+        "row_count",
+        "reference_verified",
+        "coverage_complete",
+        "source_hashes",
+        "order_count",
+        "gross_sale_paise",
+        "returns_cancellations_paise",
+        "pending_in_transit_paise",
+        "discount_paise",
+        "fees_deductions_paise",
+        "other_adjustments_paise",
+        "expected_bank_paise",
+        "actual_bank_paise",
+        "gap_paise",
+        "realisation_bps"
+      ],
+      "implementation": "planned_requires_reference_acceptance",
+      "key_rule": "Kolkata YYYY-MM; additionally scoped by Meta account",
+      "notes": "Missing or unverified totals are omitted, never invented as zero. Signed financial amounts follow source signs. Meta results are attribution, not reconciled sales.",
+      "path_template": "amazon/rollup/{month}",
+      "provider": "amazon"
+    },
+    "amazon_runs": {
+      "fields": {
+        "accounts_covered": {
+          "required": false,
+          "type": "array"
+        },
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "coverage_verified": {
+          "required": false,
+          "type": "boolean"
+        },
+        "downloaded": {
+          "required": false,
+          "type": "boolean"
+        },
+        "empty_reason": {
+          "required": false,
+          "type": "string"
+        },
+        "error_code": {
+          "required": false,
+          "type": "string"
+        },
+        "finished_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "requested": {
+          "required": false,
+          "type": "boolean"
+        },
+        "rows_failed": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_read": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_skipped": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_written": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "run_id": {
+          "required": true,
+          "type": "string"
+        },
+        "started_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "run_id",
+        "provider",
+        "status",
+        "started_at",
+        "window_from",
+        "window_to",
+        "finished_at",
+        "error_code",
+        "empty_reason",
+        "rows_read",
+        "rows_written",
+        "rows_skipped",
+        "rows_failed",
+        "attempts",
+        "accounts_covered",
+        "downloaded",
+        "requested",
+        "coverage_verified"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "UUID per run",
+      "notes": "Only safe error codes; never credentials or row contents.",
+      "path_template": "amazon/runs/{run_id}",
+      "provider": "amazon"
+    },
+    "amazon_state": {
+      "fields": {
+        "backfill_complete": {
+          "required": false,
+          "type": "boolean"
+        },
+        "last_date_covered": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_at": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_run_id": {
+          "required": false,
+          "type": "string"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        }
+      },
+      "headers": [
+        "last_successful_run_id",
+        "last_successful_at",
+        "last_date_covered",
+        "backfill_complete",
+        "schema_version"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "Singleton per provider, or per Meta account",
+      "notes": "Advance coverage only after verified completion.",
+      "path_template": "amazon/state",
+      "provider": "amazon"
+    },
+    "amazon_transactions": {
+      "fields": {
+        "_raw": {
+          "encoding": "sanitized source field names and text",
+          "required": true,
+          "type": "object"
+        },
+        "account_type": {
+          "required": true,
+          "source_header": "account type",
+          "type": "string",
+          "unit": "source text"
+        },
+        "date_time": {
+          "required": true,
+          "source_header": "date/time",
+          "type": "string",
+          "unit": "source text"
+        },
+        "date_time_ist": {
+          "required": true,
+          "type": "string"
+        },
+        "description": {
+          "required": true,
+          "source_header": "description",
+          "type": "string",
+          "unit": "source text"
+        },
+        "fba_fees_paise": {
+          "required": true,
+          "source_header": "fba fees",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "fulfillment": {
+          "required": true,
+          "source_header": "fulfillment",
+          "type": "string",
+          "unit": "source text"
+        },
+        "gift_wrap_credits_paise": {
+          "required": true,
+          "source_header": "gift wrap credits",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "marketplace": {
+          "required": true,
+          "source_header": "marketplace",
+          "type": "string",
+          "unit": "source text"
+        },
+        "order_city": {
+          "required": true,
+          "source_header": "order city",
+          "type": "string",
+          "unit": "source text"
+        },
+        "order_id": {
+          "required": true,
+          "source_header": "order id",
+          "type": "string",
+          "unit": "source text"
+        },
+        "order_postal": {
+          "required": true,
+          "source_header": "order postal",
+          "type": "string",
+          "unit": "source text"
+        },
+        "order_state": {
+          "required": true,
+          "source_header": "order state",
+          "type": "string",
+          "unit": "source text"
+        },
+        "other_paise": {
+          "required": true,
+          "source_header": "other",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "other_transaction_fees_paise": {
+          "required": true,
+          "source_header": "other transaction fees",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "product_sales_paise": {
+          "required": true,
+          "source_header": "product sales",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "promotional_rebates_paise": {
+          "required": true,
+          "source_header": "promotional rebates",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "quantity": {
+          "required": true,
+          "source_header": "quantity",
+          "type": "string",
+          "unit": "source text"
+        },
+        "selling_fees_paise": {
+          "required": true,
+          "source_header": "selling fees",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "settlement_id": {
+          "required": true,
+          "source_header": "settlement id",
+          "type": "string",
+          "unit": "source text"
+        },
+        "shipping_credits_paise": {
+          "required": true,
+          "source_header": "shipping credits",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "sku": {
+          "required": true,
+          "source_header": "Sku",
+          "type": "string",
+          "unit": "source text"
+        },
+        "tcs_cgst_paise": {
+          "required": true,
+          "source_header": "TCS-CGST",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "tcs_igst_paise": {
+          "required": true,
+          "source_header": "TCS-IGST",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "tcs_sgst_paise": {
+          "required": true,
+          "source_header": "TCS-SGST",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "tds_section_194_o_paise": {
+          "required": true,
+          "source_header": "TDS (Section 194-O)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "total_paise": {
+          "required": true,
+          "source_header": "total",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "total_sales_tax_liable_gst_before_tcs_paise": {
+          "required": true,
+          "source_header": "Total sales tax liable (GST before TCS)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "transaction_release_date": {
+          "required": true,
+          "source_header": "Transaction Release Date",
+          "type": "string",
+          "unit": "source text"
+        },
+        "transaction_status": {
+          "required": true,
+          "source_header": "Transaction Status",
+          "type": "string",
+          "unit": "source text"
+        },
+        "type": {
+          "required": true,
+          "source_header": "type",
+          "type": "string",
+          "unit": "source text"
+        }
+      },
+      "headers": [
+        "date_time",
+        "settlement_id",
+        "type",
+        "order_id",
+        "sku",
+        "description",
+        "quantity",
+        "marketplace",
+        "account_type",
+        "fulfillment",
+        "order_city",
+        "order_state",
+        "order_postal",
+        "product_sales_paise",
+        "shipping_credits_paise",
+        "gift_wrap_credits_paise",
+        "promotional_rebates_paise",
+        "total_sales_tax_liable_gst_before_tcs_paise",
+        "tcs_cgst_paise",
+        "tcs_sgst_paise",
+        "tcs_igst_paise",
+        "tds_section_194_o_paise",
+        "selling_fees_paise",
+        "fba_fees_paise",
+        "other_transaction_fees_paise",
+        "other_paise",
+        "total_paise",
+        "transaction_status",
+        "transaction_release_date",
+        "date_time_ist",
+        "_raw"
+      ],
+      "implementation": "local_ingestion_only",
+      "key_rule": "First 20 SHA1 hex characters of date/time|settlement id|type|order id|Sku|description|quantity|total (original text)",
+      "notes": "All 29 exact source headers are mapped. Month uses Asia/Kolkata. Financial publication awaits rollups and reference acceptance; retain quantity as original report text.",
+      "path_template": "amazon/transactions/{month}/{row_key}",
+      "provider": "amazon"
+    },
+    "cashfree_detail": {
+      "fields": {
+        "_raw": {
+          "encoding": "sanitized source row; remote writes need safe name/value pairs",
+          "required": true,
+          "type": "object"
+        },
+        "amount": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "amounts_paise": {
+          "item_contract": "Each item has column:string and value:integer (INR paise)",
+          "required": true,
+          "type": "array"
+        },
+        "bank_account_masked": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "bank_credit_date": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "chargeback_amount": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "currency": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "date": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "date_ist": {
+          "required": true,
+          "type": "string"
+        },
+        "event_id": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "event_status": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "gateway_fee": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "gst": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "order_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "payment_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "refund_amount": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "refund_id": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "settlement_amount": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "settlement_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "type": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "utr": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        }
+      },
+      "headers": [
+        "type",
+        "payment_id",
+        "order_id",
+        "settlement_id",
+        "date",
+        "amount",
+        "event_id",
+        "event_status",
+        "currency",
+        "utr",
+        "bank_credit_date",
+        "gateway_fee",
+        "gst",
+        "refund_id",
+        "refund_amount",
+        "chargeback_amount",
+        "settlement_amount",
+        "bank_account_masked",
+        "date_ist",
+        "amounts_paise",
+        "_raw"
+      ],
+      "implementation": "confirmed_flat_local_ingestion_only",
+      "key_rule": "First 20 SHA1 hex characters of required concept values in listed header order",
+      "notes": "All sanitized source columns are retained in _raw; extras are target concepts, not claims about observed export headers. Populate the actual source mapping from a real report before ingesting. Do not publish money as floats or infer missing values.",
+      "path_template": "cashfree/recon/{month}/{row_key}",
+      "provider": "cashfree"
+    },
+    "cashfree_requests": {
+      "fields": {
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "downloaded_at": {
+          "required": false,
+          "type": "string"
+        },
+        "file_name": {
+          "required": false,
+          "type": "string"
+        },
+        "last_polled_at": {
+          "required": false,
+          "type": "string"
+        },
+        "next_poll_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider_report_id": {
+          "required": false,
+          "type": "string"
+        },
+        "ready_at": {
+          "required": false,
+          "type": "string"
+        },
+        "report_type": {
+          "required": true,
+          "type": "string"
+        },
+        "request_id": {
+          "required": true,
+          "type": "string"
+        },
+        "requested_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "request_id",
+        "report_type",
+        "window_from",
+        "window_to",
+        "requested_at",
+        "status",
+        "provider_report_id",
+        "file_name",
+        "ready_at",
+        "downloaded_at",
+        "last_polled_at",
+        "next_poll_at",
+        "attempts"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "Amazon singleton request; other providers use request UUID",
+      "notes": "Asynchronous report request contract; portal collection remains inactive.",
+      "path_template": "cashfree/requests/{request_id}",
+      "provider": "cashfree"
+    },
+    "cashfree_rollup": {
+      "fields": {
+        "actual_bank_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "computed_at": {
+          "required": true,
+          "type": "string"
+        },
+        "coverage_complete": {
+          "required": true,
+          "type": "boolean"
+        },
+        "discount_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "expected_bank_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "fees_deductions_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "gap_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "gross_sale_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "month": {
+          "required": true,
+          "type": "string"
+        },
+        "order_count": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "other_adjustments_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "pending_in_transit_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "realisation_bps": {
+          "required": false,
+          "type": "integer",
+          "unit": "basis points; 10000 = 100%"
+        },
+        "reference_verified": {
+          "required": true,
+          "type": "boolean"
+        },
+        "returns_cancellations_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "row_count": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "source_hashes": {
+          "required": true,
+          "type": "array"
+        }
+      },
+      "headers": [
+        "month",
+        "provider",
+        "computed_at",
+        "row_count",
+        "reference_verified",
+        "coverage_complete",
+        "source_hashes",
+        "order_count",
+        "gross_sale_paise",
+        "returns_cancellations_paise",
+        "pending_in_transit_paise",
+        "discount_paise",
+        "fees_deductions_paise",
+        "other_adjustments_paise",
+        "expected_bank_paise",
+        "actual_bank_paise",
+        "gap_paise",
+        "realisation_bps"
+      ],
+      "implementation": "planned_requires_reference_acceptance",
+      "key_rule": "Kolkata YYYY-MM; additionally scoped by Meta account",
+      "notes": "Missing or unverified totals are omitted, never invented as zero. Signed financial amounts follow source signs. Meta results are attribution, not reconciled sales.",
+      "path_template": "cashfree/rollup/{month}",
+      "provider": "cashfree"
+    },
+    "cashfree_runs": {
+      "fields": {
+        "accounts_covered": {
+          "required": false,
+          "type": "array"
+        },
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "coverage_verified": {
+          "required": false,
+          "type": "boolean"
+        },
+        "downloaded": {
+          "required": false,
+          "type": "boolean"
+        },
+        "empty_reason": {
+          "required": false,
+          "type": "string"
+        },
+        "error_code": {
+          "required": false,
+          "type": "string"
+        },
+        "finished_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "requested": {
+          "required": false,
+          "type": "boolean"
+        },
+        "rows_failed": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_read": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_skipped": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_written": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "run_id": {
+          "required": true,
+          "type": "string"
+        },
+        "started_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "run_id",
+        "provider",
+        "status",
+        "started_at",
+        "window_from",
+        "window_to",
+        "finished_at",
+        "error_code",
+        "empty_reason",
+        "rows_read",
+        "rows_written",
+        "rows_skipped",
+        "rows_failed",
+        "attempts",
+        "accounts_covered",
+        "downloaded",
+        "requested",
+        "coverage_verified"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "UUID per run",
+      "notes": "Only safe error codes; never credentials or row contents.",
+      "path_template": "cashfree/runs/{run_id}",
+      "provider": "cashfree"
+    },
+    "cashfree_settlements": {
+      "fields": {
+        "amount_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "bank_account_masked": {
+          "required": false,
+          "type": "string"
+        },
+        "bank_credit_date": {
+          "required": true,
+          "type": "string"
+        },
+        "settlement_id": {
+          "required": true,
+          "type": "string"
+        },
+        "source_ref": {
+          "required": false,
+          "type": "string"
+        },
+        "utr": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "utr",
+        "settlement_id",
+        "bank_credit_date",
+        "amount_paise",
+        "bank_account_masked",
+        "source_ref"
+      ],
+      "implementation": "planned_requires_source_mapping",
+      "key_rule": "Validated UTR string",
+      "notes": "Verify UTR/bank credit fields in real export before mapping.",
+      "path_template": "cashfree/settlements/{utr}",
+      "provider": "cashfree"
+    },
+    "cashfree_state": {
+      "fields": {
+        "backfill_complete": {
+          "required": false,
+          "type": "boolean"
+        },
+        "last_date_covered": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_at": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_run_id": {
+          "required": false,
+          "type": "string"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        }
+      },
+      "headers": [
+        "last_successful_run_id",
+        "last_successful_at",
+        "last_date_covered",
+        "backfill_complete",
+        "schema_version"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "Singleton per provider, or per Meta account",
+      "notes": "Advance coverage only after verified completion.",
+      "path_template": "cashfree/state",
+      "provider": "cashfree"
+    },
+    "cashfree_transactions": {
+      "fields": {
+        "amount_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "captured_at": {
+          "required": true,
+          "type": "string"
+        },
+        "order_id": {
+          "required": true,
+          "type": "string"
+        },
+        "payment_id": {
+          "required": true,
+          "type": "string"
+        },
+        "settled_at": {
+          "required": false,
+          "type": "string"
+        },
+        "settlement_id": {
+          "required": false,
+          "type": "string"
+        },
+        "source_ref": {
+          "required": false,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "payment_id",
+        "order_id",
+        "captured_at",
+        "status",
+        "amount_paise",
+        "settlement_id",
+        "settled_at",
+        "source_ref"
+      ],
+      "implementation": "planned_requires_source_mapping",
+      "key_rule": "Payment ID string; Kolkata month",
+      "notes": "Separate captured/unsettled payments source; not the settlement recon report.",
+      "path_template": "cashfree/transactions/{month}/{payment_id}",
+      "provider": "cashfree"
+    },
+    "flipkart_detail": {
+      "fields": {
+        "_raw": {
+          "encoding": "sanitized source row; remote writes need safe name/value pairs",
+          "required": true,
+          "type": "object"
+        },
+        "amounts_paise": {
+          "item_contract": "Each item has column:string and value:integer (INR paise)",
+          "required": true,
+          "type": "array"
+        },
+        "customer_add_ons": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "date": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "date_ist": {
+          "required": true,
+          "type": "string"
+        },
+        "description": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "marketplace_fees": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "offer_adjustments": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "offer_amount": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "order_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "order_item_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "payment_date": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "payment_id": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "refund_amount": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "sale_amount": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "seller_share": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "settlement_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "sku": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "taxes": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "type": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "utr": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        }
+      },
+      "headers": [
+        "date",
+        "type",
+        "order_id",
+        "order_item_id",
+        "description",
+        "sale_amount",
+        "refund_amount",
+        "settlement_id",
+        "sku",
+        "offer_amount",
+        "seller_share",
+        "customer_add_ons",
+        "marketplace_fees",
+        "taxes",
+        "offer_adjustments",
+        "payment_id",
+        "payment_date",
+        "utr",
+        "date_ist",
+        "amounts_paise",
+        "_raw"
+      ],
+      "implementation": "confirmed_flat_local_ingestion_only",
+      "key_rule": "First 20 SHA1 hex characters of required concept values in listed header order",
+      "notes": "All sanitized source columns are retained in _raw; extras are target concepts, not claims about observed export headers. Populate the actual source mapping from a real report before ingesting. Do not publish money as floats or infer missing values.",
+      "path_template": "flipkart/settlement/{month}/{row_key}",
+      "provider": "flipkart"
+    },
+    "flipkart_orders": {
+      "fields": {
+        "batch_id": {
+          "required": false,
+          "type": "string"
+        },
+        "channel": {
+          "required": true,
+          "type": "string"
+        },
+        "entry_id": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "entry_type": {
+          "enum": [
+            "OUT"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "fetched_at": {
+          "required": true,
+          "type": "string"
+        },
+        "message": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "order_date": {
+          "required": true,
+          "source_header": "Ordered On",
+          "type": "string"
+        },
+        "order_id": {
+          "required": true,
+          "source_header": "Order Id",
+          "type": "string"
+        },
+        "order_item_id": {
+          "required": true,
+          "source_header": "ORDER ITEM ID",
+          "type": "string"
+        },
+        "out_date": {
+          "required": true,
+          "type": "string"
+        },
+        "processed_at": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "product_ref": {
+          "required": true,
+          "source_header": "Product",
+          "type": "string"
+        },
+        "quantity": {
+          "minimum": 1,
+          "required": true,
+          "type": "integer"
+        },
+        "sale_value_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        },
+        "sku": {
+          "required": true,
+          "source_header": "SKU",
+          "type": "string"
+        },
+        "source_hash": {
+          "required": false,
+          "type": "string"
+        },
+        "source_ref": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "pending_review",
+            "processed",
+            "needs_review"
+          ],
+          "owner": "Mira initializes; MG_IMS owns subsequent changes",
+          "required": true,
+          "type": "string"
+        },
+        "tracking_id": {
+          "required": true,
+          "source_header": "Tracking ID",
+          "type": "string"
+        },
+        "unit_price": {
+          "required": true,
+          "source_header": "Selling Price Per Item",
+          "type": "string"
+        },
+        "unit_price_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        }
+      },
+      "headers": [
+        "order_id",
+        "order_item_id",
+        "order_date",
+        "sku",
+        "product_ref",
+        "quantity",
+        "unit_price",
+        "tracking_id",
+        "source_ref",
+        "fetched_at",
+        "schema_version",
+        "source_hash",
+        "batch_id",
+        "entry_id",
+        "message",
+        "processed_at",
+        "channel",
+        "entry_type",
+        "status",
+        "sale_value_paise",
+        "unit_price_paise",
+        "out_date"
+      ],
+      "implementation": "inventory_publish_supported",
+      "key_rule": "flipkart__{order_item_id}__OUT",
+      "notes": "Identifiers remain strings. product_ref is a portal listing, not an IMS product master name. Money text is source text; *_paise is canonical. Preserve processed records and all downstream fields. IMS consumption remains paused in MG_IMS.",
+      "path_template": "orders/{record_id}",
+      "provider": "flipkart"
+    },
+    "flipkart_raw_orders": {
+      "fields": {
+        "fields": {
+          "item_contract": "Items: name:string, value:string; sanitized source columns",
+          "required": true,
+          "type": "array"
+        }
+      },
+      "headers": [
+        "fields"
+      ],
+      "implementation": "inventory_publish_supported",
+      "key_rule": "SHA256 of UTF-8 report content, then row index",
+      "notes": "Column names are values in name/value pairs; forbidden key characters are safe.",
+      "path_template": "raw_orders/{source_hash}/{row_index}",
+      "provider": "flipkart"
+    },
+    "flipkart_raw_returns": {
+      "fields": {
+        "fields": {
+          "item_contract": "Items: name:string, value:string; sanitized source columns",
+          "required": true,
+          "type": "array"
+        }
+      },
+      "headers": [
+        "fields"
+      ],
+      "implementation": "inventory_publish_supported",
+      "key_rule": "SHA256 of UTF-8 report content, then row index",
+      "notes": "Column names are values in name/value pairs; forbidden key characters are safe.",
+      "path_template": "raw_returns/{source_hash}/{row_index}",
+      "provider": "flipkart"
+    },
+    "flipkart_requests": {
+      "fields": {
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "downloaded_at": {
+          "required": false,
+          "type": "string"
+        },
+        "file_name": {
+          "required": false,
+          "type": "string"
+        },
+        "last_polled_at": {
+          "required": false,
+          "type": "string"
+        },
+        "next_poll_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider_report_id": {
+          "required": false,
+          "type": "string"
+        },
+        "ready_at": {
+          "required": false,
+          "type": "string"
+        },
+        "report_type": {
+          "required": true,
+          "type": "string"
+        },
+        "request_id": {
+          "required": true,
+          "type": "string"
+        },
+        "requested_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "request_id",
+        "report_type",
+        "window_from",
+        "window_to",
+        "requested_at",
+        "status",
+        "provider_report_id",
+        "file_name",
+        "ready_at",
+        "downloaded_at",
+        "last_polled_at",
+        "next_poll_at",
+        "attempts"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "Amazon singleton request; other providers use request UUID",
+      "notes": "Asynchronous report request contract; portal collection remains inactive.",
+      "path_template": "flipkart/requests/{request_id}",
+      "provider": "flipkart"
+    },
+    "flipkart_returns": {
+      "fields": {
+        "batch_id": {
+          "required": false,
+          "type": "string"
+        },
+        "channel": {
+          "required": true,
+          "type": "string"
+        },
+        "entry_id": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "entry_type": {
+          "enum": [
+            "RTO"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "fetched_at": {
+          "required": true,
+          "type": "string"
+        },
+        "ff_type": {
+          "required": true,
+          "source_header": "FF Type",
+          "type": "string"
+        },
+        "message": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "order_id": {
+          "required": true,
+          "source_header": "Order ID",
+          "type": "string"
+        },
+        "order_item_id": {
+          "required": true,
+          "source_header": "Order Item ID",
+          "type": "string"
+        },
+        "processed_at": {
+          "owner": "MG_IMS",
+          "required": false,
+          "type": "string"
+        },
+        "product_ref": {
+          "required": true,
+          "source_header": "Product",
+          "type": "string"
+        },
+        "quantity": {
+          "minimum": 1,
+          "required": true,
+          "type": "integer"
+        },
+        "return_id": {
+          "required": true,
+          "source_header": "Return ID",
+          "type": "string"
+        },
+        "return_reason": {
+          "required": true,
+          "source_header": "Return Reason",
+          "type": "string"
+        },
+        "return_status": {
+          "required": true,
+          "source_header": "Return Status",
+          "type": "string"
+        },
+        "return_type": {
+          "required": true,
+          "source_header": "Return Type",
+          "type": "string"
+        },
+        "returned_on": {
+          "required": true,
+          "source_header": "Completed Date",
+          "type": "string"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        },
+        "sku": {
+          "required": true,
+          "source_header": "SKU",
+          "type": "string"
+        },
+        "source_hash": {
+          "required": false,
+          "type": "string"
+        },
+        "source_ref": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "pending_review",
+            "processed",
+            "needs_review"
+          ],
+          "owner": "Mira initializes; MG_IMS owns subsequent changes",
+          "required": true,
+          "type": "string"
+        },
+        "tracking_id": {
+          "required": true,
+          "source_header": "Tracking ID",
+          "type": "string"
+        }
+      },
+      "headers": [
+        "return_id",
+        "order_id",
+        "order_item_id",
+        "sku",
+        "product_ref",
+        "quantity",
+        "returned_on",
+        "return_reason",
+        "return_status",
+        "ff_type",
+        "return_type",
+        "tracking_id",
+        "source_ref",
+        "fetched_at",
+        "schema_version",
+        "source_hash",
+        "batch_id",
+        "entry_id",
+        "message",
+        "processed_at",
+        "channel",
+        "entry_type",
+        "status"
+      ],
+      "implementation": "inventory_publish_supported",
+      "key_rule": "flipkart__{return_id}",
+      "notes": "Identifiers remain strings. product_ref is a portal listing, not an IMS product master name. Money text is source text; *_paise is canonical. Preserve processed records and all downstream fields. IMS consumption remains paused in MG_IMS.",
+      "path_template": "returns/{record_id}",
+      "provider": "flipkart"
+    },
+    "flipkart_rollup": {
+      "fields": {
+        "actual_bank_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "computed_at": {
+          "required": true,
+          "type": "string"
+        },
+        "coverage_complete": {
+          "required": true,
+          "type": "boolean"
+        },
+        "discount_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "expected_bank_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "fees_deductions_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "gap_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "gross_sale_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "month": {
+          "required": true,
+          "type": "string"
+        },
+        "order_count": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "other_adjustments_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "pending_in_transit_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "realisation_bps": {
+          "required": false,
+          "type": "integer",
+          "unit": "basis points; 10000 = 100%"
+        },
+        "reference_verified": {
+          "required": true,
+          "type": "boolean"
+        },
+        "returns_cancellations_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "row_count": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "source_hashes": {
+          "required": true,
+          "type": "array"
+        }
+      },
+      "headers": [
+        "month",
+        "provider",
+        "computed_at",
+        "row_count",
+        "reference_verified",
+        "coverage_complete",
+        "source_hashes",
+        "order_count",
+        "gross_sale_paise",
+        "returns_cancellations_paise",
+        "pending_in_transit_paise",
+        "discount_paise",
+        "fees_deductions_paise",
+        "other_adjustments_paise",
+        "expected_bank_paise",
+        "actual_bank_paise",
+        "gap_paise",
+        "realisation_bps"
+      ],
+      "implementation": "planned_requires_reference_acceptance",
+      "key_rule": "Kolkata YYYY-MM; additionally scoped by Meta account",
+      "notes": "Missing or unverified totals are omitted, never invented as zero. Signed financial amounts follow source signs. Meta results are attribution, not reconciled sales.",
+      "path_template": "flipkart/rollup/{month}",
+      "provider": "flipkart"
+    },
+    "flipkart_runs": {
+      "fields": {
+        "accounts_covered": {
+          "required": false,
+          "type": "array"
+        },
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "coverage_verified": {
+          "required": false,
+          "type": "boolean"
+        },
+        "downloaded": {
+          "required": false,
+          "type": "boolean"
+        },
+        "empty_reason": {
+          "required": false,
+          "type": "string"
+        },
+        "error_code": {
+          "required": false,
+          "type": "string"
+        },
+        "finished_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "requested": {
+          "required": false,
+          "type": "boolean"
+        },
+        "rows_failed": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_read": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_skipped": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_written": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "run_id": {
+          "required": true,
+          "type": "string"
+        },
+        "started_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "run_id",
+        "provider",
+        "status",
+        "started_at",
+        "window_from",
+        "window_to",
+        "finished_at",
+        "error_code",
+        "empty_reason",
+        "rows_read",
+        "rows_written",
+        "rows_skipped",
+        "rows_failed",
+        "attempts",
+        "accounts_covered",
+        "downloaded",
+        "requested",
+        "coverage_verified"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "UUID per run",
+      "notes": "Only safe error codes; never credentials or row contents.",
+      "path_template": "flipkart/runs/{run_id}",
+      "provider": "flipkart"
+    },
+    "flipkart_state": {
+      "fields": {
+        "backfill_complete": {
+          "required": false,
+          "type": "boolean"
+        },
+        "last_date_covered": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_at": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_run_id": {
+          "required": false,
+          "type": "string"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        }
+      },
+      "headers": [
+        "last_successful_run_id",
+        "last_successful_at",
+        "last_date_covered",
+        "backfill_complete",
+        "schema_version"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "Singleton per provider, or per Meta account",
+      "notes": "Advance coverage only after verified completion.",
+      "path_template": "flipkart/state",
+      "provider": "flipkart"
+    },
+    "ims_activity": {
+      "fields": {
+        "item": {
+          "required": false,
+          "source_header": "Item",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "product": {
+          "required": false,
+          "source_header": "Product",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "quantity": {
+          "required": false,
+          "source_header": "Quantity",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "timestamp": {
+          "required": false,
+          "source_header": "Timestamp",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "type": {
+          "required": false,
+          "source_header": "Type",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "unit": {
+          "required": false,
+          "source_header": "Unit",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "user": {
+          "required": false,
+          "source_header": "User",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "timestamp",
+        "type",
+        "item",
+        "product",
+        "quantity",
+        "unit",
+        "user"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/activity/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_agent_imports": {
+      "fields": {
+        "channel": {
+          "required": false,
+          "source_header": "Channel",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "entry_id": {
+          "required": false,
+          "source_header": "Entry ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "import_key": {
+          "required": false,
+          "source_header": "Import Key",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "kind": {
+          "required": false,
+          "source_header": "Kind",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "message": {
+          "required": false,
+          "source_header": "Message",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "order_id": {
+          "required": false,
+          "source_header": "Order ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "product_name": {
+          "required": false,
+          "source_header": "Product Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "quantity": {
+          "required": false,
+          "source_header": "Quantity",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "sku": {
+          "required": false,
+          "source_header": "SKU",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "status": {
+          "required": false,
+          "source_header": "Status",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "timestamp": {
+          "required": false,
+          "source_header": "Timestamp",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "timestamp",
+        "import_key",
+        "kind",
+        "channel",
+        "order_id",
+        "sku",
+        "product_name",
+        "quantity",
+        "status",
+        "entry_id",
+        "message"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/agent_imports/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_batches": {
+      "fields": {
+        "balance_units": {
+          "required": false,
+          "source_header": "Balance (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "batch_no": {
+          "required": false,
+          "source_header": "Batch No",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "created_at": {
+          "required": false,
+          "source_header": "Created At",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "created_by": {
+          "required": false,
+          "source_header": "Created By",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "damage_units": {
+          "required": false,
+          "source_header": "Damage (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "expiry_date": {
+          "required": false,
+          "source_header": "Expiry Date",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "mfg_date": {
+          "required": false,
+          "source_header": "Mfg Date",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "notes": {
+          "required": false,
+          "source_header": "Notes",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "out_units": {
+          "required": false,
+          "source_header": "Out (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "packed_units": {
+          "required": false,
+          "source_header": "Packed (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "product_name": {
+          "required": false,
+          "source_header": "Product Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "repack_units": {
+          "required": false,
+          "source_header": "Repack (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "reserved": {
+          "required": false,
+          "source_header": "Reserved",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "batch_no",
+        "product_name",
+        "mfg_date",
+        "expiry_date",
+        "packed_units",
+        "out_units",
+        "damage_units",
+        "repack_units",
+        "balance_units",
+        "reserved",
+        "created_by",
+        "created_at",
+        "notes"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/batches/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_channel_prices": {
+      "fields": {
+        "channel": {
+          "required": false,
+          "source_header": "Channel",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "last_updated": {
+          "required": false,
+          "source_header": "Last Updated",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "product": {
+          "required": false,
+          "source_header": "Product",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "selling_price_paise": {
+          "required": false,
+          "source_header": "Selling Price (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "updated_by": {
+          "required": false,
+          "source_header": "Updated By",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "product",
+        "channel",
+        "selling_price_paise",
+        "last_updated",
+        "updated_by"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/channel_prices/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_finished_goods": {
+      "fields": {
+        "current_stock_units": {
+          "required": false,
+          "source_header": "Current Stock (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "item_id": {
+          "required": false,
+          "source_header": "Item ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "last_updated": {
+          "required": false,
+          "source_header": "Last Updated",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "min_threshold_units": {
+          "required": false,
+          "source_header": "Min Threshold (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "opening_stock_units": {
+          "required": false,
+          "source_header": "Opening Stock (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "product_name": {
+          "required": false,
+          "source_header": "Product Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "status": {
+          "required": false,
+          "source_header": "Status",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "total_damage_units": {
+          "required": false,
+          "source_header": "Total Damage (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "total_out_units": {
+          "required": false,
+          "source_header": "Total Out (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "total_packed_units": {
+          "required": false,
+          "source_header": "Total Packed (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "total_repackaging_units": {
+          "required": false,
+          "source_header": "Total Repackaging (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "updated_by": {
+          "required": false,
+          "source_header": "Updated By",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "item_id",
+        "product_name",
+        "opening_stock_units",
+        "total_packed_units",
+        "total_out_units",
+        "total_damage_units",
+        "total_repackaging_units",
+        "current_stock_units",
+        "min_threshold_units",
+        "status",
+        "last_updated",
+        "updated_by"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/finished_goods/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_packaging": {
+      "fields": {
+        "applicable_product": {
+          "required": false,
+          "source_header": "Applicable Product",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "consumed_pcs": {
+          "required": false,
+          "source_header": "Consumed (Pcs)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "current_stock_pcs": {
+          "required": false,
+          "source_header": "Current Stock (Pcs)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "item_id": {
+          "required": false,
+          "source_header": "Item ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "item_name": {
+          "required": false,
+          "source_header": "Item Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "last_updated": {
+          "required": false,
+          "source_header": "Last Updated",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "min_threshold_pcs": {
+          "required": false,
+          "source_header": "Min Threshold (Pcs)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "opening_stock_pcs": {
+          "required": false,
+          "source_header": "Opening Stock (Pcs)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "qty_received_pcs": {
+          "required": false,
+          "source_header": "Qty Received (Pcs)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "status": {
+          "required": false,
+          "source_header": "Status",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "updated_by": {
+          "required": false,
+          "source_header": "Updated By",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "item_id",
+        "item_name",
+        "applicable_product",
+        "opening_stock_pcs",
+        "qty_received_pcs",
+        "consumed_pcs",
+        "current_stock_pcs",
+        "min_threshold_pcs",
+        "status",
+        "last_updated",
+        "updated_by"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/packaging/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_price_history": {
+      "fields": {
+        "changed_by": {
+          "required": false,
+          "source_header": "Changed By",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "field": {
+          "required": false,
+          "source_header": "Field",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "item_id": {
+          "required": false,
+          "source_header": "Item ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "item_name": {
+          "required": false,
+          "source_header": "Item Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "item_type": {
+          "required": false,
+          "source_header": "Item Type",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "new_value_paise": {
+          "required": false,
+          "source_header": "New Value (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "old_value_paise": {
+          "required": false,
+          "source_header": "Old Value (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "timestamp": {
+          "required": false,
+          "source_header": "Timestamp",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "timestamp",
+        "item_id",
+        "item_type",
+        "item_name",
+        "field",
+        "old_value_paise",
+        "new_value_paise",
+        "changed_by"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/price_history/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_prices": {
+      "fields": {
+        "cost_price_paise": {
+          "required": false,
+          "source_header": "Cost Price (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "item_id": {
+          "required": false,
+          "source_header": "Item ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "item_name": {
+          "required": false,
+          "source_header": "Item Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "item_type": {
+          "required": false,
+          "source_header": "Item Type",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "last_updated": {
+          "required": false,
+          "source_header": "Last Updated",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "purchase_price_paise": {
+          "required": false,
+          "source_header": "Purchase Price (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "purchase_qty_ml": {
+          "required": false,
+          "source_header": "Purchase Qty (ml)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "selling_price_paise": {
+          "required": false,
+          "source_header": "Selling Price (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "unit": {
+          "required": false,
+          "source_header": "Unit",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "updated_by": {
+          "required": false,
+          "source_header": "Updated By",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "item_id",
+        "item_type",
+        "item_name",
+        "cost_price_paise",
+        "selling_price_paise",
+        "unit",
+        "last_updated",
+        "updated_by",
+        "purchase_price_paise",
+        "purchase_qty_ml"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/prices/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_raw_materials": {
+      "fields": {
+        "consumed_ml": {
+          "required": false,
+          "source_header": "Consumed (ml)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "current_stock_ml": {
+          "required": false,
+          "source_header": "Current Stock (ml)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "current_stock_units": {
+          "required": false,
+          "source_header": "Current Stock (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "item_id": {
+          "required": false,
+          "source_header": "Item ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "last_updated": {
+          "required": false,
+          "source_header": "Last Updated",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "min_threshold_units": {
+          "required": false,
+          "source_header": "Min Threshold (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "opening_stock_ml": {
+          "required": false,
+          "source_header": "Opening Stock (ml)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "product_name": {
+          "required": false,
+          "source_header": "Product Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "qty_received_ml": {
+          "required": false,
+          "source_header": "Qty Received (ml)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "status": {
+          "required": false,
+          "source_header": "Status",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "updated_by": {
+          "required": false,
+          "source_header": "Updated By",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "item_id",
+        "product_name",
+        "opening_stock_ml",
+        "qty_received_ml",
+        "consumed_ml",
+        "current_stock_ml",
+        "current_stock_units",
+        "min_threshold_units",
+        "status",
+        "last_updated",
+        "updated_by"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/raw_materials/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_sku_map": {
+      "fields": {
+        "bottles_per_unit": {
+          "required": false,
+          "source_header": "Bottles per Unit",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "channel": {
+          "required": false,
+          "source_header": "Channel",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "notes": {
+          "required": false,
+          "source_header": "Notes",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "product_name": {
+          "required": false,
+          "source_header": "Product Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "sku": {
+          "required": false,
+          "source_header": "SKU",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "channel",
+        "sku",
+        "product_name",
+        "bottles_per_unit",
+        "notes"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/sku_map/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_supervisor_entries": {
+      "fields": {
+        "batch_no": {
+          "required": false,
+          "source_header": "Batch No",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "channel": {
+          "required": false,
+          "source_header": "Channel",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "channel_date": {
+          "required": false,
+          "source_header": "Channel Date",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "damage_reason": {
+          "required": false,
+          "source_header": "Damage Reason",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "entry_id": {
+          "required": false,
+          "source_header": "Entry ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "entry_type": {
+          "required": false,
+          "source_header": "Entry Type",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "import_key": {
+          "required": false,
+          "source_header": "Import Key",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "order_id": {
+          "required": false,
+          "source_header": "Order ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "order_item_id": {
+          "required": false,
+          "source_header": "Order Item ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "product_name": {
+          "required": false,
+          "source_header": "Product Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "quantity_units": {
+          "required": false,
+          "source_header": "Quantity (Units)",
+          "type": "number",
+          "unit": "source header unit"
+        },
+        "remarks": {
+          "required": false,
+          "source_header": "Remarks",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "repack_items": {
+          "required": false,
+          "source_header": "Repack Items",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "return_id": {
+          "required": false,
+          "source_header": "Return ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "return_type": {
+          "required": false,
+          "source_header": "Return Type",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "sale_value_paise": {
+          "required": false,
+          "source_header": "Sale Value (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "selling_price_paise": {
+          "required": false,
+          "source_header": "Selling Price (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "sku": {
+          "required": false,
+          "source_header": "SKU",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "source": {
+          "required": false,
+          "source_header": "Source",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "supervisor_email": {
+          "required": false,
+          "source_header": "Supervisor Email",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "timestamp": {
+          "required": false,
+          "source_header": "Timestamp",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "tracking_id": {
+          "required": false,
+          "source_header": "Tracking ID",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "unit_cost_paise": {
+          "required": false,
+          "source_header": "Unit Cost (₹)",
+          "type": "integer",
+          "unit": "INR paise"
+        }
+      },
+      "headers": [
+        "entry_id",
+        "timestamp",
+        "entry_type",
+        "channel",
+        "order_id",
+        "product_name",
+        "quantity_units",
+        "remarks",
+        "supervisor_email",
+        "repack_items",
+        "unit_cost_paise",
+        "selling_price_paise",
+        "sale_value_paise",
+        "batch_no",
+        "order_item_id",
+        "tracking_id",
+        "return_id",
+        "return_type",
+        "damage_reason",
+        "source",
+        "import_key",
+        "sku",
+        "channel_date"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/supervisor_entries/{record_id}",
+      "provider": "mg_ims"
+    },
+    "ims_user_profiles": {
+      "fields": {
+        "email": {
+          "required": false,
+          "source_header": "Email",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "name": {
+          "required": false,
+          "source_header": "Name",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "permissions": {
+          "required": false,
+          "source_header": "Permissions",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "role": {
+          "required": false,
+          "source_header": "Role",
+          "type": "string",
+          "unit": "source header unit"
+        },
+        "whatsapp": {
+          "required": false,
+          "source_header": "WhatsApp",
+          "type": "string",
+          "unit": "source header unit"
+        }
+      },
+      "headers": [
+        "email",
+        "name",
+        "role",
+        "whatsapp",
+        "permissions"
+      ],
+      "implementation": "proposed_ims_adapter_required",
+      "key_rule": "Stable item/entry/batch ID, or UUID for history",
+      "notes": "Maps MG_IMS headings to proposed fields. No inventory rows or credentials or legacy tables are seeded. MG_IMS remains connection-only; actor fields refer to staff.",
+      "path_template": "ims/user_profiles/{record_id}",
+      "provider": "mg_ims"
+    },
+    "inventory_runs": {
+      "fields": {
+        "accounts_covered": {
+          "required": false,
+          "type": "array"
+        },
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "coverage_verified": {
+          "required": false,
+          "type": "boolean"
+        },
+        "downloaded": {
+          "required": false,
+          "type": "boolean"
+        },
+        "empty_reason": {
+          "required": false,
+          "type": "string"
+        },
+        "error_code": {
+          "required": false,
+          "type": "string"
+        },
+        "finished_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "requested": {
+          "required": false,
+          "type": "boolean"
+        },
+        "rows_failed": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_read": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_skipped": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_written": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "run_id": {
+          "required": true,
+          "type": "string"
+        },
+        "started_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "run_id",
+        "provider",
+        "status",
+        "started_at",
+        "window_from",
+        "window_to",
+        "finished_at",
+        "error_code",
+        "empty_reason",
+        "rows_read",
+        "rows_written",
+        "rows_skipped",
+        "rows_failed",
+        "attempts",
+        "accounts_covered",
+        "downloaded",
+        "requested",
+        "coverage_verified"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "UUID",
+      "notes": "Inventory run publication is distinct from financial provider logs.",
+      "path_template": "mira/inventory_runs/{run_id}",
+      "provider": "mira"
+    },
+    "meta_accounts": {
+      "fields": {
+        "account_id": {
+          "required": true,
+          "type": "string"
+        },
+        "account_name": {
+          "required": true,
+          "type": "string"
+        },
+        "active": {
+          "required": true,
+          "type": "boolean"
+        },
+        "currency": {
+          "required": true,
+          "type": "string"
+        },
+        "portfolio": {
+          "required": true,
+          "type": "string"
+        },
+        "timezone": {
+          "required": true,
+          "type": "string"
+        },
+        "verified_at": {
+          "required": false,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "account_id",
+        "account_name",
+        "portfolio",
+        "currency",
+        "timezone",
+        "verified_at",
+        "active"
+      ],
+      "implementation": "planned_account_verification",
+      "key_rule": "Meta account ID string",
+      "notes": "SOW account IDs: 1232147828611575 and 1057055993786755; INR, Asia/Kolkata.",
+      "path_template": "meta/accounts/{account_id}",
+      "provider": "meta"
+    },
+    "meta_detail": {
+      "fields": {
+        "_raw": {
+          "encoding": "sanitized source row; remote writes need safe name/value pairs",
+          "required": true,
+          "type": "object"
+        },
+        "account_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "account_name": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "ad_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "ad_name": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "adset_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "adset_name": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "amount": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "amounts_paise": {
+          "item_contract": "Each item has column:string and value:integer (INR paise)",
+          "required": true,
+          "type": "array"
+        },
+        "budget": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "campaign_id": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "campaign_name": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "clicks": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "cost_per_result": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "currency": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "date": {
+          "required": true,
+          "source_header_status": "operator_mapping_required",
+          "type": "string"
+        },
+        "date_ist": {
+          "required": true,
+          "type": "string"
+        },
+        "frequency": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "impressions": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "reach": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "result_type": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "results": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        },
+        "timezone": {
+          "encoding": "original source text",
+          "required": false,
+          "source_header_status": "unconfirmed",
+          "type": "string"
+        }
+      },
+      "headers": [
+        "date",
+        "ad_id",
+        "account_id",
+        "campaign_id",
+        "adset_id",
+        "amount",
+        "account_name",
+        "campaign_name",
+        "adset_name",
+        "ad_name",
+        "impressions",
+        "clicks",
+        "reach",
+        "frequency",
+        "results",
+        "result_type",
+        "cost_per_result",
+        "budget",
+        "currency",
+        "timezone",
+        "date_ist",
+        "amounts_paise",
+        "_raw"
+      ],
+      "implementation": "confirmed_flat_local_ingestion_only",
+      "key_rule": "account_id + ad_id + Kolkata date",
+      "notes": "All sanitized source columns are retained in _raw; extras are target concepts, not claims about observed export headers. Populate the actual source mapping from a real report before ingesting. Do not publish money as floats or infer missing values.",
+      "path_template": "meta/spend/{account_id}/{month}/{ad_id}_{date}",
+      "provider": "meta"
+    },
+    "meta_rollup": {
+      "fields": {
+        "account_id": {
+          "required": true,
+          "type": "string"
+        },
+        "clicks": {
+          "required": false,
+          "type": "number"
+        },
+        "computed_at": {
+          "required": true,
+          "type": "string"
+        },
+        "cost_per_result_paise": {
+          "required": false,
+          "type": "integer",
+          "unit": "INR paise"
+        },
+        "coverage_complete": {
+          "required": true,
+          "type": "boolean"
+        },
+        "impressions": {
+          "required": false,
+          "type": "number"
+        },
+        "month": {
+          "required": true,
+          "type": "string"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "reference_verified": {
+          "required": true,
+          "type": "boolean"
+        },
+        "results": {
+          "required": false,
+          "type": "number"
+        },
+        "row_count": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "source_hashes": {
+          "required": true,
+          "type": "array"
+        },
+        "spend_paise": {
+          "required": true,
+          "type": "integer",
+          "unit": "INR paise"
+        }
+      },
+      "headers": [
+        "month",
+        "provider",
+        "computed_at",
+        "row_count",
+        "reference_verified",
+        "coverage_complete",
+        "source_hashes",
+        "account_id",
+        "spend_paise",
+        "impressions",
+        "clicks",
+        "results",
+        "cost_per_result_paise"
+      ],
+      "implementation": "planned_requires_reference_acceptance",
+      "key_rule": "Kolkata YYYY-MM; additionally scoped by Meta account",
+      "notes": "Missing or unverified totals are omitted, never invented as zero. Signed financial amounts follow source signs. Meta results are attribution, not reconciled sales.",
+      "path_template": "meta/rollup/{account_id}/{month}",
+      "provider": "meta"
+    },
+    "meta_runs": {
+      "fields": {
+        "accounts_covered": {
+          "required": false,
+          "type": "array"
+        },
+        "attempts": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "coverage_verified": {
+          "required": false,
+          "type": "boolean"
+        },
+        "downloaded": {
+          "required": false,
+          "type": "boolean"
+        },
+        "empty_reason": {
+          "required": false,
+          "type": "string"
+        },
+        "error_code": {
+          "required": false,
+          "type": "string"
+        },
+        "finished_at": {
+          "required": false,
+          "type": "string"
+        },
+        "provider": {
+          "required": true,
+          "type": "string"
+        },
+        "requested": {
+          "required": false,
+          "type": "boolean"
+        },
+        "rows_failed": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_read": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_skipped": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "rows_written": {
+          "minimum": 0,
+          "required": true,
+          "type": "integer"
+        },
+        "run_id": {
+          "required": true,
+          "type": "string"
+        },
+        "started_at": {
+          "required": true,
+          "type": "string"
+        },
+        "status": {
+          "required": true,
+          "type": "string"
+        },
+        "window_from": {
+          "required": true,
+          "type": "string"
+        },
+        "window_to": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "headers": [
+        "run_id",
+        "provider",
+        "status",
+        "started_at",
+        "window_from",
+        "window_to",
+        "finished_at",
+        "error_code",
+        "empty_reason",
+        "rows_read",
+        "rows_written",
+        "rows_skipped",
+        "rows_failed",
+        "attempts",
+        "accounts_covered",
+        "downloaded",
+        "requested",
+        "coverage_verified"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "UUID per run",
+      "notes": "Only safe error codes; never credentials or row contents.",
+      "path_template": "meta/runs/{run_id}",
+      "provider": "meta"
+    },
+    "meta_state": {
+      "fields": {
+        "backfill_complete": {
+          "required": false,
+          "type": "boolean"
+        },
+        "last_date_covered": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_at": {
+          "required": false,
+          "type": "string"
+        },
+        "last_successful_run_id": {
+          "required": false,
+          "type": "string"
+        },
+        "schema_version": {
+          "required": false,
+          "type": "integer"
+        }
+      },
+      "headers": [
+        "last_successful_run_id",
+        "last_successful_at",
+        "last_date_covered",
+        "backfill_complete",
+        "schema_version"
+      ],
+      "implementation": "planned_remote_sync",
+      "key_rule": "Singleton per provider, or per Meta account",
+      "notes": "Advance coverage only after verified completion.",
+      "path_template": "meta/state/{account_id}",
+      "provider": "meta"
+    }
+  },
+  "currency": "INR",
+  "database_url": "https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "field_count": 555,
+  "identifier_storage": "string",
+  "money_storage": "integer paise",
+  "owner": "mira",
+  "privacy": {
+    "bank_accounts": "masked only",
+    "excluded": [
+      "customer email",
+      "customer phone",
+      "customer street address",
+      "customer GSTIN",
+      "customer company name",
+      "password",
+      "OTP",
+      "service account private key"
+    ],
+    "raw_policy": "Sanitize before archiving; buyer name allowed only in Flipkart inventory raw"
+  },
+  "purpose": "Field catalog; not business records or deployed security rules",
+  "schema_version": 1,
+  "timezone": "Asia/Kolkata"
+}

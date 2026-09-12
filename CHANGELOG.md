@@ -1,5 +1,14 @@
 # Changes
 
+## Live schema dashboard
+
+- Read the existing /mira/schema/v1 catalog and subscribe to its curated record paths.
+- Populate live stock KPIs, provider summaries, activity and searchable collection tables.
+- Handle nested/composite keys, shared order/return paths, paise amounts and missing/unverified totals.
+- Reflect additions, edits and deletions without refresh; reconcile catalog changes and retry read failures.
+- Preserve all write/seeding guards and keep raw archives out of dashboard queries.
+- Add adapter and desktop/mobile live-update regression coverage.
+
 ## Non-blocking workspace preview
 
 - Replace the schema-blocked welcome button with Open dashboard.
