@@ -148,7 +148,7 @@
     const drafts = Array.from(document.querySelectorAll('.modal-overlay.open input, .modal-overlay.open select, .modal-overlay.open textarea')).map(function(el){return {el:el,value:el.value,checked:el.checked};});
     try {
       DASHBOARD_DATA = data;
-      const schemaNotice=document.getElementById('schema-notice');schemaNotice.hidden=!data.schemaWarning;schemaNotice.textContent=data.schemaWarning||'';
+      const schemaNotice=document.getElementById('schema-notice');schemaNotice.hidden=!(data.schemaWarning||data.sourceNotice);schemaNotice.textContent=data.schemaWarning||data.sourceNotice||'';
       document.querySelector('.p-name').textContent = data.userEmail;
       document.querySelector('.user-info').textContent = data.role + ' · Build ' + APP_BUILD;
       document.querySelectorAll('.p-avatar, .gh-avatar').forEach(function (el) { el.textContent = (data.userEmail || 'U')[0].toUpperCase(); });
@@ -754,9 +754,9 @@
       const skuLine = r['SKU'] ? '<div class="muted tiny mono">' + esc(r['SKU']) + '</div>' : '';
       const sale = t === 'Out' && r['Sale Value (₹)'] !== '' && r['Sale Value (₹)'] !== undefined ? rupee(r['Sale Value (₹)']) : '-';
       const acts = [];
-      if (canEdit && t === 'RTO-Pending') acts.push({ cls: 'inspect', fn: 'openResolveReturn', arg: r['Entry ID'], label: '🔍 Inspect' });
-      if (isAdmin) acts.push({ cls: 'edit', fn: 'editSupEntry', arg: r['Entry ID'], label: '✏️ Edit' });
-      if (isSuper) acts.push({ cls: 'delete', fn: 'deleteSupEntry', arg: r['Entry ID'], label: '🗑 Delete' });
+      if (!r['Read Only'] && canEdit && t === 'RTO-Pending') acts.push({ cls: 'inspect', fn: 'openResolveReturn', arg: r['Entry ID'], label: '🔍 Inspect' });
+      if (!r['Read Only'] && isAdmin) acts.push({ cls: 'edit', fn: 'editSupEntry', arg: r['Entry ID'], label: '✏️ Edit' });
+      if (!r['Read Only'] && isSuper) acts.push({ cls: 'delete', fn: 'deleteSupEntry', arg: r['Entry ID'], label: '🗑 Delete' });
       html += '<tr' + (t === 'RTO-Pending' ? ' class="row-pending"' : '') + '><td>' + fmtDate(r['Timestamp']) + src + '</td><td>' + entryTypeBadge(t) + '</td><td>' + esc(r['Channel'] || '-') + '</td><td>' + esc(r['Order ID'] || '-') + trace +
         '</td><td>' + avatar(r['Product Name']) + esc(r['Product Name']) + skuLine + '</td><td>' + batch + '</td><td><b>' + esc(r['Quantity (Units)']) + '</b></td><td>' + sale + '</td><td>' + remarks + '</td><td class="muted">' + esc(r['Supervisor Email']) + '</td>' +
         (showAct ? '<td>' + actionRow(acts) + '</td>' : '') + '</tr>';
@@ -868,7 +868,7 @@
     return 'margin-good';
   }
   function rupee(n) { return '₹' + formatIndianNumber(Number(n || 0).toFixed(2)); }
-  function rupee0(n) { return '₹' + formatIndianNumber(Number(n || 0).toFixed(0)); }
+  function rupee0(n) { return n===null?'—':'₹' + formatIndianNumber(Number(n || 0).toFixed(0)); }
 
   function renderCostingTable(rows) {
     const sorted = rows.slice().sort(function (a, b) { return a.marginPct - b.marginPct; });
@@ -1750,7 +1750,7 @@
       const rt = r['Return Type'] === 'courier_return' ? '<span class="badge status-in">Courier (sealed)</span>' : (r['Return Type'] === 'customer_return' ? '<span class="badge status-low">Customer (opened)</span>' : '<span class="muted">-</span>');
       html += '<tr><td>' + (r['Channel Date'] ? esc(String(r['Channel Date']).slice(0, 10)) + '<div class="muted tiny">listed ' + fmtDate(r['Timestamp']) + '</div>' : fmtDate(r['Timestamp'])) + (r['Source'] === 'Auto' ? ' <span class="src-tag">AUTO</span>' : '') + '</td><td>' + esc(r['Channel'] || '-') + '</td><td class="mono"><b>' + esc(r['Tracking ID'] || '-') + '</b></td><td class="mono">' + esc(r['Order ID'] || '-') +
         '</td><td>' + avatar(r['Product Name']) + esc(r['Product Name']) + (r['SKU'] ? '<div class="muted tiny mono">' + esc(r['SKU']) + '</div>' : '') + (r['Remarks'] ? '<div class="muted tiny">' + esc(r['Remarks']) + '</div>' : '') + '</td><td><b>' + esc(r['Quantity (Units)']) + '</b></td><td>' + rt + '</td><td>' +
-        (canEdit ? '<div class="action-icons"><button class="btn-mini ok" onclick="openResolveReturn(\'' + esc(r['Entry ID']) + '\', \'RTO-Repackaging\')">✔ Repackaging</button><button class="btn-mini bad" onclick="openResolveReturn(\'' + esc(r['Entry ID']) + '\', \'RTO-Damage\')">✖ Damage</button></div>' : '<span class="muted">no permission</span>') + '</td></tr>';
+        (!r['Read Only'] && canEdit ? '<div class="action-icons"><button class="btn-mini ok" onclick="openResolveReturn(\'' + esc(r['Entry ID']) + '\', \'RTO-Repackaging\')">✔ Repackaging</button><button class="btn-mini bad" onclick="openResolveReturn(\'' + esc(r['Entry ID']) + '\', \'RTO-Damage\')">✖ Damage</button></div>' : '<span class="muted">no permission</span>') + '</td></tr>';
     });
     document.getElementById('pending-returns-table').innerHTML = html + '</table>';
   }

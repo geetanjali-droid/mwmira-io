@@ -3,6 +3,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const crypto = require('node:crypto');
 const config = require('./config.cjs');
+const {channelPaths,projectChannels}=require('./channel-data.cjs');
 process.env.TZ='Asia/Kolkata';
 const sources = ['gas-shim.js','backend.js'].map(file => fs.readFileSync(path.join(__dirname,'../js',file),'utf8'));
 const TABLES = { RAW:'ims_raw_materials', PACK:'ims_packaging', FG:'ims_finished_goods', SUP:'ims_supervisor_entries', PRICE:'ims_prices', HISTORY:'ims_price_history', ACTIVITY:'ims_activity', CHPRICE:'ims_channel_prices', ADMIN:'ims_user_profiles', BATCH:'ims_batches', IMPORTS:'ims_agent_imports', SKUMAP:'ims_sku_map' };
@@ -18,7 +19,7 @@ function profileAccess(identity, ims) {
   if(!profile) throw error('This account has no workspace access. Contact your administrator.',403);
   return profile;
 }
-function runtime(schema, ims, identity) {
+function runtime(schema, ims, identity, channelData={}) {
   profileAccess(identity,ims);
   const context=vm.createContext({ console:{log(){},error(){}}, structuredClone, CURRENT_EMAIL:identity.email });
   context.window=context;
@@ -57,6 +58,18 @@ function runtime(schema, ims, identity) {
   }
   // Keep the original product catalogue/fields while including valid products already in Firebase.
   run(`CONFIG.PRODUCTS=Array.from(new Set(CONFIG.PRODUCTS.concat(getRawMaterialData().map(r=>r['Product Name']),getFinishedGoodsData().map(r=>r['Product Name'])))).filter(Boolean);`);
+  context._channelData=channelData;context._projectChannels=projectChannels;
+  run(`const inventorySources=loadSources_;loadSources_=function(){const src=inventorySources();
+    const projected=_projectChannels(_channelData,src.supAll,CONFIG.PRODUCTS,sheetToObjects_(getSheet_(CONFIG.SHEETS.SKUMAP)));
+    src.supAll=src.supAll.concat(projected.rows).sort((a,b)=>new Date(a.Timestamp)-new Date(b.Timestamp));
+    CONFIG.PRODUCTS=Array.from(new Set(CONFIG.PRODUCTS.concat(projected.rows.map(r=>r['Product Name']))));
+    CONFIG.CHANNELS=Array.from(new Set(CONFIG.CHANNELS.concat(projected.rows.map(r=>r.Channel))));return src;};`);
+  run(`const channelAnalytics=computeAnalytics_;computeAnalytics_=function(filters,src,costing,isAdmin){
+    const output=channelAnalytics(filters,src,costing,isAdmin);
+    const external=src.supAll.filter(r=>r['Read Only']&&(!filters.product||r['Product Name']===filters.product)&&(!filters.channel||r.Channel===filters.channel));
+    if(external.length){if(isAdmin){output.kpi.grossProfit=null;output.products.forEach(p=>{if(external.some(r=>r['Product Name']===p.product)){delete p.profit;delete p.marginPct;}});}
+      output.insights=output.insights.filter(i=>!i.text.includes('Most profitable')&&!i.text.includes('drawn down faster'));
+    }return output;};`);
   function invoke(method,args) {
     if(!READ.has(method)&&!WRITE.has(method))throw error('This operation is unavailable in the Firebase deployment.',400);
     if(WRITE.has(method)&&missing.length)throw error('Inventory schema mappings are incomplete. No changes saved.',503);
@@ -67,6 +80,11 @@ function runtime(schema, ims, identity) {
     const result=run('window[_request.method].apply(null,_request.args)');
     if(method==='getAgentStatus')Object.assign(result,{live:true,configured:true,urlMasked:new URL(config.databaseURL).hostname});
     if(method==='getDashboardData'&&missing.length)result.schemaWarning='Some inventory mappings are unavailable. The workspace is open; saving will resume when your schema is ready.';
+    if(method==='getDashboardData'&&Object.values(channelData).some(v=>Object.keys(v||{}).length))result.sourceNotice='Sales and dispatch include Firebase channel orders. Stock and production use IMS records. Channel orders do not change inventory; profit requires recorded costs.';
+    const dashboard=method==='getDashboardData'?result:result?.dashboard;
+    if(dashboard?.admin&&Object.values(channelData).some(v=>Object.keys(v||{}).length)){
+      for(const bucket of [dashboard.admin.dispatch.month,dashboard.admin.dispatch.allTime,...dashboard.admin.dispatch.byChannel])bucket.outValueCost=null;
+    }
     return JSON.parse(JSON.stringify(result));
   }
   function changedTree() {
@@ -120,7 +138,11 @@ async function execute(token,method,args,fetcher=fetch) {
   const [schemaResponse,imsResponse]=await Promise.all([dbRequest('mira/schema/v1',token,{},fetcher),dbRequest('ims',token,{headers:{'X-Firebase-ETag':'true'}},fetcher)]);
   if(!schemaResponse.ok||!imsResponse.ok)throw error('Firebase denied access to the inventory or schema.',403);
   const [schema,ims]=await Promise.all([schemaResponse.json(),imsResponse.json()]);
-  const app=runtime(schema,ims,user);
+  profileAccess(user,ims);
+  const channelData=Object.fromEntries(await Promise.all(channelPaths(schema).map(async path=>{
+    const response=await dbRequest(path,token,{},fetcher);if(!response.ok)throw error('Cannot read Firebase '+path+'. Please retry.',503);return [path,await response.json()||{}];
+  })));
+  const app=runtime(schema,ims,user,channelData);
   const password=method==='setUserAccess'?String(args[3]||''):'';
   if(password) {
     if(password.length<6)throw error('Firebase passwords must contain at least 6 characters.');

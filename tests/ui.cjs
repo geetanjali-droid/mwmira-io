@@ -11,6 +11,7 @@ const mock=`const callbacks=[];const AUTH={currentUser:null,setPersistence:async
  const browser=await chromium.launch({channel:process.env.BROWSER_CHANNEL||'chrome',headless:true});
  try{for(const width of [1440,390]){
   let ims={user_profiles:{v:{email:viewer.email,name:'Viewer',role:'Viewer',permissions:'none'}}},reads=0,events=0;
+  const channelData={orders:{}};
   const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));page.on('dialog',async d=>{errors.push(d.message());await d.dismiss();});
   await page.route('**/*',async route=>{
@@ -18,7 +19,7 @@ const mock=`const callbacks=[];const AUTH={currentUser:null,setPersistence:async
    if(url.hostname==='inventory.test'){
     if(url.pathname==='/api/inventory'){
      const {method,args}=route.request().postDataJSON();reads++;
-     try{const app=runtime(schema,ims,route.request().headers().authorization==='Bearer owner'?owner:viewer);const result=app.invoke(method,args);ims=app.changedTree();return route.fulfill({json:{result}});}catch(e){return route.fulfill({status:/access|Access/.test(e.message)?403:400,json:{error:e.message}});}
+     try{const app=runtime(schema,ims,route.request().headers().authorization==='Bearer owner'?owner:viewer,channelData);const result=app.invoke(method,args);ims=app.changedTree();return route.fulfill({json:{result}});}catch(e){return route.fulfill({status:/access|Access/.test(e.message)?403:400,json:{error:e.message}});}
     }
     if(url.pathname==='/api/events'){events++;return route.fulfill({contentType:'text/event-stream',body:'event: changed\ndata: {}\n\n'});}
     if(url.pathname==='/js/firebase-init.js')return route.fulfill({contentType:'text/javascript',body:mock});
@@ -46,6 +47,12 @@ const mock=`const callbacks=[];const AUTH={currentUser:null,setPersistence:async
   await expect(page.locator('#raw-table-wrap')).toContainText('300',{timeout:8000});
   await expect(page.locator('#raw-qty')).toHaveValue('45');await expect(page.locator('#raw-product')).toHaveValue('He Charge');assert.ok(events>0);
   await page.keyboard.press('Escape');await expect(page.locator('#modal-raw-received')).toBeHidden();
+  channelData.orders.a={order_id:'TEST-CHANNEL',order_item_id:'TEST-LINE',channel:'Amazon FBM',sku:'01-HECHARGE-PK1',quantity:2,sale_value_paise:123456,out_date:new Date().toISOString(),item_status:'Shipped'};
+  await expect(page.locator('#dash-kpi-1')).toContainText('1,235',{timeout:8000});
+  await page.evaluate(()=>switchPage('sup'));await expect(page.locator('#sup-table-wrap')).toContainText('TEST-CHANNEL');
+  assert.equal(await page.locator('#sup-table-wrap button').count(),0,'channel entries cannot edit stock');
+  delete channelData.orders.a;await expect(page.locator('#sup-table-wrap')).not.toContainText('TEST-CHANNEL',{timeout:8000});
+  await page.evaluate(()=>switchPage('dash'));
   fs.mkdirSync('test-results',{recursive:true});await page.screenshot({path:`test-results/restored-${width}.png`,fullPage:true});
   await page.evaluate(()=>MiraAuth.signOut());await expect(page.locator('#app-wrapper')).toBeHidden();
   await page.locator('#login-email').fill(viewer.email);await page.locator('#login-passcode').fill('test-password');await page.locator('.btn-login-gold').click();await expect(page.locator('#app-wrapper')).toBeVisible();
