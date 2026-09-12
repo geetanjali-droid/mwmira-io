@@ -1,59 +1,47 @@
-# Meethi Golee / Mira live dashboard
+# Meethi Golee / Mira Inventory
 
-A static HTML/CSS/JavaScript dashboard connected read-only to:
+The original dashboard and all seven pages are restored: Dashboard, Admin Panel, Raw Material, Packaging Material, Finished Goods and batches, Supervisor Entries, and User Access.
 
-https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app/
+## Run and deploy
 
-## Run
+Use Node.js 22 or newer:
 
 ```sh
 node scripts/serve.cjs
 ```
 
-Open http://127.0.0.1:5500 and choose **Open dashboard**. No build is required. Internet access is required for Firebase and the hosted frontend dependencies.
+Open http://localhost:5500. Internet access is required for Firebase Authentication and charts. Production uses Vercel's Node functions in `api/`; `vercel.json` builds only the intended frontend files into `dist`. Static-only Firebase Hosting cannot run this API. The existing production address is https://mwmira-io.vercel.app/.
 
-## Current Firebase integration
+## Login and roles
 
-The dashboard reads the user's catalog at `/mira/schema/v1`, then subscribes to the collection paths declared in `path_template`. It supports keyed collections, nested month/account collections, composite keys and singleton state. Catalog updates reconcile the subscriptions automatically. It never reads the database root or the old `/data` spreadsheet layout.
+Firebase Authentication is required before data loads. Google and email/password sign-in are configured in project `mw-mira-io`; the production domain and localhost are authorized. The verified owner account is `geetanjali.chaurasiya@mushroomworldgroup.com`. Use **Sign in with Google** for that work account. There is no preview bypass or hardcoded-password authentication.
 
-At verification, Firebase contained the catalog but no business records. There are 43 catalog definitions, represented by 37 dashboard collections: the shared orders/returns paths are deduplicated, and four raw archives are excluded. Raw archives and `_raw` payloads are not dashboard records. A snapshot of the fetched catalog is retained at `docs/firebase-schema-v1.json` for regression tests; the application uses the live catalog, not this snapshot.
+Other accounts must have an existing `/ims/user_profiles/{record_id}` profile. User Access manages the original permission flags and roles. Adding a user with an optional password creates a Firebase Authentication account; passwords must have at least six characters. Leave the password blank for Google sign-in or an existing Firebase account. Existing password changes belong in Firebase Authentication. Removing a profile revokes workspace access without deleting the Firebase account. Passwords are never saved in the RTDB profile.
 
-- Inventory KPIs use the declared current stock, packed, batch balance and supervisor quantity fields.
-- Incoming orders and returns are shown independently from recorded dispatch and inventory movements. The app does not match listing names to inventory products or import orders into stock.
-- Amazon, Flipkart, Cashfree and Meta monthly summaries remain separate. Financial totals require `reference_verified` and `coverage_complete` to both be true. Missing or invalid values display as unavailable, not zero. Integer paise are formatted as rupees for display.
-- The inventory, supervisor, admin and user-profile sections have schema-driven, searchable tables with 50-row pagination. Only declared fields are displayed; password/secret fields and raw payloads are excluded.
-- Firebase `value` listeners update the active view on additions, changes and deletions; no manual refresh or polling is needed. UI updates are coalesced over 30 ms. Listeners are deduplicated, reconciled after catalog changes, and detached on page exit.
-- Connection state, last-received time, source loading and read failures are shown explicitly. Offline data is labeled stale. Refresh reconnects listeners and retries failed reads. Missing schema does not block opening the workspace.
+Every API operation verifies the Firebase ID token and current profile permissions. Role restrictions are also reflected in navigation, row actions, and entry controls. Revocation and sign-out stop the live stream; stale requests cannot restore an old session.
 
-This integration performs **no writes, schema creation, seeding, migration or database-rule deployment**. `FIREBASE_CONNECTION_ONLY` stays true to block both entry points of the old mutable spreadsheet adapter; its name is retained for compatibility. Only the separate read-only adapter accesses the new collection paths.
+**Database access boundary:** these API checks do not replace Firebase Realtime Database rules. Live database rules have not been changed; the database was accessible directly without authentication at verification. Restricting that direct access requires rules coordinated with the external import agent. The historical `database.rules.json` is not a secure production policy and is not deployed by this project.
 
-## Authentication
+## Existing schema and live data
 
-Open dashboard provides read-only UI access under the database's existing read rules. It is not a verified login and does not enforce user roles. Firebase Authentication has not been configured; adding a user profile does not establish authentication. The supplied legacy passcode workflow remains disabled against this project. The local `database.rules.json` is historical reference and is not configured for deployment. No live rules were changed.
+The application fetches `/mira/schema/v1` from:
 
-## Files
+https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app/
 
-- `js/live-data.js`: schema interpretation, data normalization and subscription lifecycle.
-- `js/live-dashboard.js`: live KPIs, provider summaries and record tables.
-- `js/firebase-init.js`: project connection and welcome-screen metadata.
-- `js/clientscript.js`, `index.html`, `css/styles.css`: shared UI and legacy views.
-- `js/backend.js`, `js/gas-shim.js`, `js/gsrun-shim.js`: legacy inventory logic retained for isolated tests; mutations are blocked in the connected app.
-- `_original/`: original Apps Script sources.
+The catalog's `source_header` and `path_template` fields map the existing `ims_*` definitions to the original UI columns. No schema, sample products, prices, opening batches, or business records are automatically created. Missing collections are empty in memory. Missing schema mappings show a notice inside the authenticated workspace and disable saves until the mappings return; they do not block login.
 
-## Tests
+The original product choices remain in the UI, supplemented by products already present in Firebase. All stock values, movements, batch data, costing, history, and profiles come from the mapped `/ims` collections. Integer paise are converted to rupees for display and checked before saving. Unknown record fields, existing record IDs, and unrelated IMS collections are preserved.
+
+Firebase REST event streams watch `/ims` and `/mira/schema/v1`. The server emits change notifications only; the browser fetches an authorized dashboard payload on each update. Streams reconnect automatically and stop on sign-out. Updates preserve open form drafts and table filters. Saves use Firebase ETags to commit each stock operation atomically; conflicting changes fail without replaying the operation.
+
+External orders and returns are not automatically counted as stock movements. Your import agent must write the existing IMS collections. The Admin Panel displays the existing import log and SKU map count; Apps Script scheduling and retry controls are disabled because they do not run on Vercel. The original AI, WhatsApp, and email integrations still require separately configured server integrations.
+
+## Verification
 
 ```sh
 node --test tests/*.test.cjs
-pnpm install --frozen-lockfile
-pnpm test:live
+node tests/ui.cjs
+node scripts/build.cjs
 ```
 
-The current browser tests default to installed Chrome. Set `BROWSER_CHANNEL=msedge` for Edge. `pnpm test:preview` is an alias for the same live dashboard checks; `pnpm test:ui` exercises legacy UI workflows with a simulated database (defaults to Edge).
-
-Browser tests intercept Firebase and simulate updates without writing live records. They cover desktop/mobile entry, navigation, empty data, adds/edits/deletes, shared-channel deduplication, paise display, denied reads, offline/reconnect, refresh and no database writes. Unit tests cover schema paths, nested/composite keys, malformed/missing values and subscription cleanup. The legacy inventory regression tests also remain available. Ignored screenshots are saved in `test-results/`.
-
-## Hosting and limits
-
-Pushing GitHub does not deploy Firebase Hosting. `firebase deploy --only hosting` publishes the static files using `.firebaserc`; tests, schema snapshots, archived sources and development files are excluded. Database rules are not deployed by this configuration.
-
-Each subscribed collection prefix is read as a snapshot. Tables paginate rendering, not database reads; very large archives require indexed server queries or aggregation rather than downloading full snapshots. New catalog versions under a different version path require an explicit version migration. Apps Script email, WhatsApp, AI calls and scheduled imports still require server integrations.
+Browser tests use installed Chrome (override with `BROWSER_CHANNEL`) and simulated Firebase responses; they never write live business records. They cover login, all original pages, live updates, mobile layout, draft preservation, permissions, and revocation. Server tests cover canonical field/paise mapping, no seeding, roles, conflicting writes, and packing/dispatch/reversal across separate requests. `docs/firebase-schema-v1.json` is the fetched schema snapshot used by tests, not a schema deployed by the app.

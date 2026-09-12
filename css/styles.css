@@ -637,7 +637,9 @@ body.modal-active { overflow: hidden; }
 @media (max-width: 760px) {
   .global-header { position: sticky; top: 0; z-index: 100; height: auto; min-height: 64px; padding: 8px 12px; gap: 8px; }
   .global-header .gh-left { font-size: 13px; gap: 6px; }
-  .gh-user { flex-shrink: 0; }
+  .global-header { flex-wrap: wrap; }
+  .global-header .gh-user { flex-wrap: wrap; font-size: 12px; }
+  #connection-status { max-width: 140px; }
   .gh-avatar { display: none !important; }
   .theme-toggle { font-size: 11px; padding: 7px; }
   .sidebar { position: fixed; top: 64px; bottom: 0; left: 0; z-index: 99; overflow-y: auto; box-shadow: 8px 0 30px #0003; }

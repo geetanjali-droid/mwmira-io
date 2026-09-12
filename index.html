@@ -28,10 +28,11 @@
         <label class="login-field-label" for="login-email">Email Address</label>
         <input type="email" id="login-email" autocomplete="username" placeholder="you@example.com" value="" required>
 
-        <label class="login-field-label" for="login-passcode">Passcode</label>
-        <input type="password" id="login-passcode" autocomplete="current-password" placeholder="Enter your passcode" onkeydown="if(event.key==='Enter')submitLogin()">
+        <label class="login-field-label" for="login-passcode">Password</label>
+        <input type="password" id="login-passcode" autocomplete="current-password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')submitLogin()">
 
         <button class="btn-login-gold" onclick="submitLogin()">Sign In</button>
+        <button id="google-login" class="btn-outline" style="width:100%;margin-top:12px" onclick="MiraAuth.googleSignIn()">Sign in with Google</button>
         <p id="login-error" class="login-error" role="alert"></p>
         <p id="firebase-status" class="login-sub" role="status" aria-live="polite"></p>
 
@@ -52,9 +53,9 @@
   <!-- GLOBAL TOP HEADER -->
   <div class="global-header">
     <div class="gh-left"><button class="gh-hamburger" onclick="toggleSidebar()" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="true">☰</button> Meethi Golee Inventory System</div>
-    <div class="gh-user">
+    <div class="gh-user"><span id="connection-status" role="status" style="font-size:11px"></span>
       <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Switch light / dark theme">🌙 Dark</button>
-      <button class="theme-toggle" onclick="location.reload()">Sign out</button>
+      <button class="theme-toggle" onclick="MiraAuth.signOut()">Sign out</button>
       <span class="gh-avatar">U</span>
 
     </div>
@@ -88,6 +89,7 @@
 
     <!-- MAIN CONTENT -->
     <div class="main">
+      <p id="schema-notice" role="status" hidden></p>
 
       <!-- ===== DASHBOARD ===== -->
       <div id="page-dash" class="page">
@@ -757,12 +759,13 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="js/firebase-init.js"></script>
-  <script src="js/gas-shim.js"></script>
-  <script src="js/backend.js"></script>
-  <script src="js/gsrun-shim.js"></script>
-  <script src="js/live-data.js"></script>
-  <script src="js/live-dashboard.js"></script>
+  <script src="js/auth-client.js"></script>
+  
+  <script src="js/api-bridge.js"></script>
+  
+  
   <script src="js/clientscript.js"></script>
 </body>
 </html>

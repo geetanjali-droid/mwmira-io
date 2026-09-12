@@ -1,7 +1,7 @@
 
   let DASHBOARD_DATA = null;
   // Shown in the sidebar so you can confirm which version of the files is actually live.
-  const APP_BUILD = 'B23';
+  const APP_BUILD = 'B24';
 
   let FULL_DATA = { raw: [], pack: [], fg: [], sup: [], batches: [], adminCosting: [], priceHistory: [], users: [] };
 
@@ -19,13 +19,12 @@
   });
 
   function submitLogin() {
-    if (isConnectionOnly()) { openWorkspacePreview(); return; }
     const email = document.getElementById('login-email').value.trim();
-    const passcode = document.getElementById('login-passcode').value.trim();
+    const passcode = document.getElementById('login-passcode').value;
     const errorEl = document.getElementById('login-error');
     errorEl.innerText = '';
     if (!email || !passcode) {
-      errorEl.innerText = 'Enter both email and passcode.';
+      errorEl.innerText = 'Enter both email and password.';
       return;
     }
     const btn = document.querySelector('.btn-login-gold');
@@ -44,21 +43,6 @@
         errorEl.innerText = err.message;
       })
       .checkLoginPasscode(email, passcode);
-  }
-
-  function isConnectionOnly() {
-    return typeof FIREBASE_CONNECTION_ONLY !== 'undefined' && FIREBASE_CONNECTION_ONLY;
-  }
-
-  // Read-only workspace; authentication and all legacy mutation paths stay separate.
-  function openWorkspacePreview() {
-    document.getElementById('login-overlay').style.display = 'none';
-    document.getElementById('app-wrapper').style.display = 'block';
-    document.querySelectorAll('.p-avatar, .gh-avatar').forEach(function (el) { el.textContent = 'M'; });
-    document.querySelector('[onclick="location.reload()"]').textContent = 'Back';
-    document.getElementById('chat-fab').hidden = true;
-    MiraDashboard.open();
-    switchPage('dash');
   }
 
   /* ============ THEME (light / dark) ============ */
@@ -85,14 +69,6 @@
 
   function switchPage(page) {
     const target = document.getElementById('page-' + page);
-    if (isConnectionOnly()) {
-      if (!target) return;
-      MiraDashboard.show(page);
-      document.querySelectorAll('.page').forEach(function (el) { el.style.display = el === target ? 'block' : 'none'; });
-      document.querySelectorAll('.nav-item').forEach(function (el) { el.classList.toggle('active', el.dataset.page === page); });
-      if (window.matchMedia('(max-width: 760px)').matches && !document.getElementById('sidebar').classList.contains('collapsed')) toggleSidebar();
-      return;
-    }
     if (!target || (page === 'admin' && !DASHBOARD_DATA?.isAdmin) || (page === 'users' && !DASHBOARD_DATA?.isSuper)) return;
     document.querySelectorAll('.page').forEach(function (p) { p.style.display = 'none'; });
     document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
@@ -164,19 +140,23 @@
   /* ============ LOAD ============ */
 
   function loadDashboard() {
-    if (isConnectionOnly()) { MiraDashboard.refresh(); return; }
     google.script.run.withSuccessHandler(applyDashboard).withFailureHandler(showError).getDashboardData();
   }
 
   // Renders everything from ONE payload (dashboard + admin panel). Called after login and after every save.
   function applyDashboard(data) {
+    const drafts = Array.from(document.querySelectorAll('.modal-overlay.open input, .modal-overlay.open select, .modal-overlay.open textarea')).map(function(el){return {el:el,value:el.value,checked:el.checked};});
     try {
       DASHBOARD_DATA = data;
+      const schemaNotice=document.getElementById('schema-notice');schemaNotice.hidden=!data.schemaWarning;schemaNotice.textContent=data.schemaWarning||'';
       document.querySelector('.p-name').textContent = data.userEmail;
       document.querySelector('.user-info').textContent = data.role + ' · Build ' + APP_BUILD;
       document.querySelectorAll('.p-avatar, .gh-avatar').forEach(function (el) { el.textContent = (data.userEmail || 'U')[0].toUpperCase(); });
       document.querySelector('[data-page="admin"]').hidden = !data.isAdmin;
       document.querySelector('[data-page="users"]').hidden = !data.isSuper;
+      document.querySelectorAll('[onclick*="openModal(\'modal-raw-received"], [onclick*="openModal(\'modal-pack-received"], [onclick*="openModal(\'modal-fg-packing"], [onclick*="openModal(\'modal-sup-entry"]').forEach(function(el){el.hidden=!data.canEdit;});
+      const current = document.querySelector('.nav-item.active')?.dataset.page;
+      if((current==='admin'&&!data.isAdmin)||(current==='users'&&!data.isSuper))switchPage('dash');
       FULL_DATA.raw = data.rawMaterial;
       FULL_DATA.pack = data.packaging;
       FULL_DATA.fg = data.finishedGoods;
@@ -184,9 +164,9 @@
       FULL_DATA.pendingReturns = data.pendingReturns || [];
       populateDropdowns(data);
       updatePendingBadge();
-      renderRawTable(data.rawMaterial);
-      renderPackTable(data.packaging);
-      renderFGTable(data.finishedGoods);
+      filterRawTable();
+      filterPackTable();
+      filterFGTable();
       FULL_DATA.batches = data.batches || [];
       renderBatchSection(data);
       filterSupTable();
@@ -194,16 +174,19 @@
       if (data.admin) renderAdmin(data.admin);
       if (data.users) { FULL_DATA.users = data.users; if (document.getElementById('user-table-wrap')) renderUserTable(data.users); }
       renderPeriodBars();
+      if(PERIOD)loadPeriodData();
+      if(current==='admin'&&data.isAdmin)loadAgentStatus();
       renderChatAlerts();
       populateDashFilters(data);
       const dashPage = document.getElementById('page-dash');
       if (dashPage && dashPage.style.display !== 'none') loadAnalytics();
       else if (data.analytics) ANALYTICS = null; // stale; re-rendered on next visit
       busy(false);
+      drafts.forEach(function(d){if(d.el.isConnected){d.el.value=d.value;d.el.checked=d.checked;}});
     } catch (err) {
       busy(false);
       console.error('Dashboard render failed:', err);
-      alert('Dashboard load error: ' + err.message + '\n(Check console for details - likely a sheet column header mismatch. Run initializeSystem() once.)');
+      alert('Dashboard load error: ' + err.message + '\nPlease reload and try again.');
     }
   }
 
@@ -1107,7 +1090,8 @@
     document.getElementById('user-email').readOnly = false;
     document.getElementById('user-name').value = '';
     document.getElementById('user-passcode').value = '';
-    document.getElementById('user-passcode').placeholder = 'Set Passcode (required for sign-in)';
+    document.getElementById('user-passcode').disabled = false;
+    document.getElementById('user-passcode').placeholder = 'Optional Firebase password (6+ characters); blank for Google/existing login';
     document.getElementById('user-whatsapp').value = '';
     setUserPermChecks({ entries: true });
     openModal('modal-user');
@@ -1121,7 +1105,8 @@
     document.getElementById('user-email').readOnly = true;
     document.getElementById('user-name').value = row['Name'] || '';
     document.getElementById('user-passcode').value = '';
-    document.getElementById('user-passcode').placeholder = row.HasPasscode ? 'New passcode (leave blank to keep existing)' : 'Set Passcode (required for sign-in)';
+    document.getElementById('user-passcode').disabled = true;
+    document.getElementById('user-passcode').placeholder = 'Password changes are managed in Firebase Authentication';
     document.getElementById('user-whatsapp').value = row['WhatsApp'] || '';
     setUserPermChecks(row.Perms || {});
     openModal('modal-user');
@@ -1143,7 +1128,7 @@
   }
 
   function deleteUserRow(emailAddr) {
-    if (!confirm('Remove access for ' + emailAddr + '? They will fall back to Viewer (read-only) access.')) return;
+    if (!confirm('Remove workspace access for ' + emailAddr + '? Their login will no longer open the dashboard.')) return;
     busy(true);
     google.script.run.withSuccessHandler(function (res) {
       applyDashboard(res.dashboard);
@@ -1830,6 +1815,10 @@
   }
   function renderAgentCard() {
     const st = AGENT_STATUS, card = document.getElementById('agent-card'); if (!st || !card) return;
+    if(st.live){
+      card.innerHTML='<div class="agent-grid"><div><span class="muted">Firebase</span><b class="ok-val">Connected</b></div><div><span class="muted">Dashboard updates</span><b>Live · changes appear automatically</b></div><div><span class="muted">SKU Map rows</span><b>'+st.skuRows+'</b></div></div><p class="muted">Import history is read from Firebase. External order imports and schedules are managed by your import agent.</p>';
+      document.querySelectorAll('[onclick="agentToggleTrigger()"], [onclick="agentSyncNow()"]').forEach(function(button){button.disabled=true;button.title='Managed by your external import agent';});return;
+    }
     const lr = st.lastResult;
     const sum = function (k) { return lr && lr[k] ? lr[k].done + ' created · ' + lr[k].failed + ' needs review · ' + lr[k].skipped + ' skipped (of ' + lr[k].read + ')' : '—'; };
     card.innerHTML =
@@ -1854,7 +1843,7 @@
       const st = r['Status'];
       const badge = st === 'processed' ? '<span class="badge status-in">processed</span>' : (st === 'needs_review' ? '<span class="badge status-out">needs review</span>' : '<span class="badge status-nodate">' + esc(st) + '</span>');
       html += '<tr><td>' + fmtDate(r['Timestamp']) + '</td><td>' + esc(r['Kind']) + '</td><td>' + esc(r['Channel'] || '-') + '</td><td class="mono">' + esc(r['Order ID'] || '-') + '</td><td class="mono">' + esc(r['SKU'] || '-') + '</td><td>' + esc(r['Product Name'] || '-') + '</td><td>' + esc(r['Quantity']) + '</td><td>' + badge + '</td><td>' + esc(r['Entry ID'] || '-') + '</td><td class="muted">' + esc(r['Message'] || '') + '</td><td>' +
-        (st === 'needs_review' ? '<button class="btn-mini" onclick="agentRetry(\'' + esc(r['Kind']) + '\', \'' + esc(r['Import Key']) + '\')">↻ Retry</button>' : '') + '</td></tr>';
+        (st === 'needs_review' && !AGENT_STATUS.live ? '<button class="btn-mini" onclick="agentRetry(\'' + esc(r['Kind']) + '\', \'' + esc(r['Import Key']) + '\')">↻ Retry</button>' : '') + '</td></tr>';
     });
     wrap.innerHTML = html + '</table>';
   }
@@ -1862,6 +1851,7 @@
     busy(true, 'Testing Firebase…');
     google.script.run.withSuccessHandler(function (r) {
       busy(false);
+      if(r.live){showErrorPopup('Connected. '+r.collections+' inventory collections contain records. Live dashboard updates are enabled.');return;}
       const fmt = function (c) { return c.total + ' record(s): ' + Object.keys(c.byStatus).map(function (k) { return k + ' ' + c.byStatus[k]; }).join(', '); };
       showErrorPopup('✅ Connected.\n\nOrders → ' + fmt(r.orders) + '\nReturns → ' + fmt(r.returns));
     }).withFailureHandler(showError).testFirebaseConnection();

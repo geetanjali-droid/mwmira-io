@@ -6,8 +6,8 @@
     "test": "node --test tests/*.test.cjs",
     "test:ui": "node tests/ui.cjs",
     "start": "node scripts/serve.cjs",
-    "test:preview": "node tests/preview.cjs",
-    "test:live": "node tests/preview.cjs"
+    "test:preview": "node tests/ui.cjs",
+    "test:live": "node tests/ui.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.55.1"

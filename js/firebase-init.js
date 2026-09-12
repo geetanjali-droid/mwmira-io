@@ -1,32 +1,12 @@
-/* Read-only integration: the database schema is owned and supplied by the user.
-   Do not enable the legacy adapter against this project or seed any tables. */
-const FIREBASE_CONNECTION_ONLY = true;
+// Registered Firebase web configuration. Authentication is required before inventory access.
+const FIREBASE_CONNECTION_ONLY = true; // The obsolete /data adapter stays blocked.
 const firebaseConfig = {
-  databaseURL: "https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app"
+  apiKey: 'AIzaSyDNyV44hLSXFK66teYSl0X27pepnIMGHA8',
+  authDomain: 'mw-mira-io.firebaseapp.com',
+  databaseURL: 'https://mw-mira-io-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'mw-mira-io',
+  appId: '1:187353423004:web:9d263fbe4ef7a7dfbce159'
 };
-
-// Realtime Database URL configuration needs no credentials from the previous project.
 firebase.initializeApp(firebaseConfig);
+const AUTH = firebase.auth();
 const DB = firebase.database();
-let firebaseConnected = false;
-function renderFirebaseConnection() {
-  const status = document.getElementById('firebase-status');
-  if (status) status.textContent = firebaseConnected
-    ? 'Firebase connected. You can open your dashboard.'
-    : 'Connecting to Firebase… You can still open your dashboard.';
-  if (!FIREBASE_CONNECTION_ONLY) return;
-  ['login-email', 'login-passcode'].forEach(function (id) {
-    const input = document.getElementById(id); if (input) input.hidden = true;
-  });
-  document.querySelectorAll('.login-field-label, .login-footnote').forEach(function (el) { el.hidden = true; });
-  const subtitle = document.querySelector('.login-sub');
-  if (subtitle) subtitle.textContent = 'Explore your workspace. View live inventory and channel data from Firebase.';
-  const button = document.querySelector('.btn-login-gold');
-  if (button) { button.disabled = false; button.textContent = 'Open dashboard'; }
-}
-// Connection metadata. live-data.js separately subscribes to catalog-defined record paths.
-DB.ref('.info/connected').on('value', function (snapshot) {
-  firebaseConnected = snapshot.val() === true;
-  renderFirebaseConnection();
-});
-document.addEventListener('DOMContentLoaded', renderFirebaseConnection);

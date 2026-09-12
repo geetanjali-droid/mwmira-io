@@ -1,0 +1,10 @@
+{
+  "buildCommand": "node scripts/build.cjs",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/*.js": {
+      "includeFiles": "{js/backend.js,js/gas-shim.js,server/**}",
+      "maxDuration": 60
+    }
+  }
+}
